@@ -1,0 +1,11 @@
+node_modules/
+dist/
+coverage/
+package-lock.json
+
+*.log
+
+public/assets/
+
+game-design-document.md
+game-development-document.md
