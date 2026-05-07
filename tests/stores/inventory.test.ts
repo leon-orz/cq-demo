@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { useInventoryStore } from '@/stores/inventory';
+import { usePlayerStore } from '@/stores/player';
+import { useSettingsStore } from '@/stores/settings';
 import { INVENTORY_CAPACITY } from '@/utils/constants';
 import type { Item } from '@/types/item';
 
@@ -31,5 +33,39 @@ describe('背包状态', () => {
     expect(inventory.isFull).toBe(true);
     expect(inventory.addItem(createItem(999))).toBe(false);
     expect(inventory.lostDrops).toBe(1);
+  });
+
+  it('自动拾取过滤应把低品质装备转化为材料', () => {
+    const inventory = useInventoryStore();
+    const settings = useSettingsStore();
+    settings.setMinRarity('rare');
+
+    const result = inventory.processDroppedItem(createItem(1));
+
+    expect(result.kept).toBe(false);
+    expect(result.reason).toBe('filtered');
+    expect(inventory.items).toHaveLength(0);
+    expect(inventory.enhancementStones).toBeGreaterThan(0);
+  });
+
+  it('分解低品时应保护锁定和更优装备', () => {
+    const inventory = useInventoryStore();
+    const player = usePlayerStore();
+    const settings = useSettingsStore();
+    settings.protectBetterItems = true;
+
+    inventory.addItem(createItem(1));
+    inventory.addItem({ ...createItem(2), locked: true });
+    inventory.addItem({ ...createItem(3), baseStats: { attack: 100 } });
+    player.equipped.weapon = createItem(99);
+
+    const decomposed = inventory.decomposeLowRarity();
+
+    expect(decomposed).toBe(1);
+    const preview = inventory.previewDecomposeLowRarity();
+
+    expect(inventory.items.some((item) => item.locked)).toBe(true);
+    expect(inventory.items.some((item) => item.baseStats.attack === 100)).toBe(true);
+    expect(preview.protectedItems.some((entry) => entry.reason === '锁定保护')).toBe(true);
   });
 });

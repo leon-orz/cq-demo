@@ -74,6 +74,46 @@ export interface Item {
   itemLevel: number;
   baseStats: StatBlock;
   affixes: Affix[];
+  locked?: boolean;
+  score?: number;
 }
 
 export type EquippedItems = Record<EquipmentSlot, Item | null>;
+
+export interface LootFilterRule {
+  minRarity: Rarity;
+  keepSlots: BaseSlot[];
+  requiredAffixStats: StatKey[];
+  autoConvertRejected: boolean;
+}
+
+export type InventorySortKey = 'score' | 'rarity' | 'slot' | 'itemLevel' | 'newest';
+
+export type SortDirection = 'asc' | 'desc';
+
+export interface InventoryViewFilter {
+  sortKey: InventorySortKey;
+  sortDirection: SortDirection;
+  rarities: Rarity[];
+  slots: BaseSlot[];
+  onlyUpgrades: boolean;
+  hideLocked: boolean;
+  minItemLevel: number;
+}
+
+export interface ItemCompareLine {
+  stat: StatKey;
+  currentValue: number;
+  nextValue: number;
+  delta: number;
+}
+
+export interface ItemCompareResult {
+  targetSlot: EquipmentSlot;
+  equippedItem: Item | null;
+  itemScore: number;
+  equippedScore: number;
+  scoreDelta: number;
+  isUpgrade: boolean;
+  lines: ItemCompareLine[];
+}

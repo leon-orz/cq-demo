@@ -109,16 +109,18 @@ export const useCombatStore = defineStore('combat', {
       inventory.addGold(reward.gold);
       player.gainExp(reward.exp);
 
-      const { added, rejected } = inventory.addItems(result.drops);
-      added.forEach((item) => {
-        this.addLog(`击败怪物，获得 ${item.name}。`);
+      const dropResults = result.drops.map((item) => inventory.processDroppedItem(item));
+      dropResults.forEach(({ item, reason }) => {
+        if (reason === 'kept') {
+          this.addLog(`击败怪物，获得 ${item.name}。`);
+        } else if (reason === 'filtered') {
+          this.addLog(`${item.name} 未通过拾取过滤，已自动转化。`);
+        } else {
+          this.addLog(`背包已满，${item.name} 未能拾取。`);
+        }
       });
 
-      rejected.forEach((item) => {
-        this.addLog(`背包已满，${item.name} 未能拾取。`);
-      });
-
-      if (rejected.length > 0 || inventory.isFull) {
+      if (dropResults.some((drop) => drop.reason === 'full') || inventory.isFull) {
         this.isAutoFighting = false;
         this.stoppedReason = '背包已满，自动挂机已暂停。';
         this.addLog(this.stoppedReason);

@@ -80,9 +80,22 @@
 - `core/item/generator.ts`：根据层数生成装备。
 - `core/item/affixRoll.ts`：按部位和品质 roll 词缀。
 - `core/item/naming.ts`：生成装备名称。
-- `stores/inventory.ts`：背包、穿戴、卸下、分解、容量限制。
-- `components/inventory/ItemGrid.vue`、`ItemSlot.vue`。
-- `tests/core/item-generator.test.ts`。
+- [x] `stores/inventory.ts`：背包、穿戴、卸下、分解、容量限制。
+- [x] `components/inventory/ItemGrid.vue`、`ItemSlot.vue`。
+- [x] `tests/core/item-generator.test.ts`。
+- [x] 自动拾取过滤。
+- [x] 装备锁定和分解保护。
+- [x] 装备评分、评分差值和更优高亮。
+- [x] 正式装备对比浮窗。
+- [x] 正式分解确认弹窗。
+- [ ] 装备排序和筛选面板。
+  - [x] 阶段开发计划与任务拆解文档。
+  - [x] 阶段美术资源需求文档。
+  - [x] 阶段复盘模板文档。
+  - [ ] 核心排序和筛选纯逻辑。
+  - [ ] 背包状态接入排序字段、筛选条件和重置动作。
+  - [ ] 背包 UI 接入排序入口、筛选面板、升降序和空结果状态。
+  - [ ] 核心逻辑测试与集成验证。
 
 验收标准：
 
@@ -94,11 +107,13 @@
 
 最小可行版本必做：
 
-- `core/offline/reward.ts`：离线秒数、收益上限、背包截断。
-- `composables/useCombatLoop.ts`：在线挂机定时器。
-- `composables/useOfflineCheck.ts`：启动和恢复时结算离线收益。
-- `stores/save.ts`：最后保存时间、快照、导入导出预留。
-- `components/offline/RewardReport.vue`。
+- [x] `core/offline/reward.ts`：离线秒数、收益上限、背包截断。
+- [x] `composables/useCombatLoop.ts`：在线挂机定时器。
+- [x] `composables/useOfflineCheck.ts`：启动和恢复时结算离线收益。
+- [x] `stores/save.ts`：最后保存时间。
+- [x] `components/offline/RewardReport.vue`：离线收益报告弹窗。
+- [ ] localForage 快照、导入导出和版本迁移。
+- [ ] 开箱动画和传说装备优先展示。
 
 风险点：
 

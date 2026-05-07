@@ -5,6 +5,7 @@
       <CenterPanel />
       <RightPanel />
     </div>
+    <RewardReport />
   </main>
 </template>
 
@@ -12,7 +13,10 @@
 import LeftPanel from '@/components/layout/LeftPanel.vue';
 import CenterPanel from '@/components/layout/CenterPanel.vue';
 import RightPanel from '@/components/layout/RightPanel.vue';
+import RewardReport from '@/components/offline/RewardReport.vue';
 import { useCombatLoop } from '@/composables/useCombatLoop';
+import { useOfflineCheck } from '@/composables/useOfflineCheck';
 
 useCombatLoop();
+useOfflineCheck();
 </script>

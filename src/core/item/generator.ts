@@ -5,6 +5,7 @@ import type { BaseItem, Item, Rarity } from '@/types/item';
 import { createId } from '@/core/utils/id';
 import type { RandomSource } from '@/core/utils/random';
 import { defaultRandom, pickOne } from '@/core/utils/random';
+import { calculateItemScore } from './filter';
 import { rollAffixes } from './affixRoll';
 import { generateItemName } from './naming';
 
@@ -39,7 +40,7 @@ export function generateItem(
     Object.entries(baseItem.baseStats).map(([key, value]) => [key, Math.round((value ?? 0) * scale * 10) / 10]),
   );
 
-  return {
+  const item: Item = {
     id: createId('item'),
     name: generateItemName(baseItem, affixes, rarity),
     slot: baseItem.slot,
@@ -48,4 +49,7 @@ export function generateItem(
     baseStats: scaledBaseStats,
     affixes,
   };
+
+  item.score = calculateItemScore(item);
+  return item;
 }
