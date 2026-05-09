@@ -1,6 +1,6 @@
 # cq-demo
 
-Vue 3 + TypeScript 的 H5 放置型 ARPG 原型。当前目标是先跑通可测试、可扩展的最小闭环，再逐步扩展离线收益、背包整理、构筑成长和表现资源。
+Vue 3 + TypeScript 的 H5 放置型 ARPG 原型。当前已经跑通可测试的核心玩法闭环，下一阶段重点是构筑评分、资源占位、组件交互测试和表现增强。
 
 当前核心闭环：
 
@@ -51,6 +51,7 @@ tests/
 └── stores/       # Pinia store 行为测试
 
 docs/
+├── backlog/      # 剩余工作清单和后续排期入口
 └── records/      # 开发记录、阶段复盘、美术资源需求和每日复盘
 ```
 
@@ -77,9 +78,11 @@ docs/
 ## 文档入口
 
 - [开发记录索引](docs/records/README.md)
+- [剩余工作清单](docs/backlog/remaining-work-2026-05-09.md)
+- [项目状态评估](docs/reports/project-status-2026-05-09.md)
 - [总任务拆解](docs/records/design-development-task-breakdown.md)
 - [依赖升级记录](docs/records/dependency-upgrade-notes.md)
-- [2026-05-08 开发复盘](docs/records/daily-review-2026-05-08.md)
+- [2026-05-09 开发复盘](docs/records/daily-review-2026-05-09.md)
 
 原始设计文档：
 
