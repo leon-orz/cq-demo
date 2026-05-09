@@ -84,8 +84,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useOfflineStore } from '@/stores/offline';
-import { formatDuration } from '@/core/utils/time';
-import { formatNumber, rarityClass } from '@/utils/format';
+import { formatDuration, formatNumber, rarityClass } from '@/utils/format';
 
 const offline = useOfflineStore();
 const report = computed(() => offline.pendingReport);
