@@ -46,9 +46,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { ref } from 'vue';
 import ItemCompareModal from '@/components/inventory/ItemCompareModal.vue';
-import { calculateItemScore, compareItemWithEquipped, isBetterThanEquipped } from '@/core/item/filter';
+import { useItemPresentation } from '@/composables/useItemPresentation';
 import { useInventoryStore } from '@/stores/inventory';
 import { usePlayerStore } from '@/stores/player';
 import type { EquipmentSlot, Item } from '@/types/item';
@@ -61,9 +61,10 @@ const props = defineProps<{
 const player = usePlayerStore();
 const inventory = useInventoryStore();
 const showCompare = ref(false);
-const itemScore = computed(() => props.item.score ?? calculateItemScore(props.item));
-const scoreDiff = computed(() => compareItemWithEquipped(props.item, player.equipped));
-const isUpgrade = computed(() => isBetterThanEquipped(props.item, player.equipped));
+const { itemScore, scoreDiff, isUpgrade } = useItemPresentation(
+  () => props.item,
+  () => player.equipped,
+);
 
 function equip() {
   const slot =

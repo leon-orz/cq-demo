@@ -8,6 +8,7 @@ export interface OfflineReport {
   gold: number;
   exp: number;
   items: Item[];
+  filteredItems: Item[];
   rejectedItems: number;
   wasInterrupted: boolean;
   rewardMultiplier: number;

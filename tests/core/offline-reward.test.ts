@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { calculateOfflineReward } from '@/core/offline/reward';
 import { SeededRandom } from '@/core/utils/random';
+import { shouldKeepItem } from '@/core/item/filter';
+import type { LootFilterRule } from '@/types/item';
 import type { PlayerBuild } from '@/types/player';
 
 function createPlayer(overrides: Partial<PlayerBuild['baseStats']> = {}): PlayerBuild {
@@ -79,6 +81,45 @@ describe('离线收益计算', () => {
     });
 
     expect(report.items.length).toBeLessThanOrEqual(1);
+    expect(report.wasInterrupted).toBe(report.rejectedItems > 0);
+  });
+
+  it('背包容量应只消耗过滤后仍需入包的离线装备', () => {
+    const rarePlusFilter: LootFilterRule = {
+      minRarity: 'rare',
+      keepSlots: [],
+      requiredAffixStats: [],
+      autoConvertRejected: true,
+    };
+    const fullCapacityReport = calculateOfflineReward({
+      lastActiveTime: 0,
+      now: 3600 * 1000,
+      playerBuild: createPlayer(),
+      stage: 1,
+      remainingSlots: 10000,
+      playerPower: 2000,
+      shouldKeepItem: (item) => shouldKeepItem(item, rarePlusFilter),
+      random: new SeededRandom(2),
+    });
+    const report = calculateOfflineReward({
+      lastActiveTime: 0,
+      now: 3600 * 1000,
+      playerBuild: createPlayer(),
+      stage: 1,
+      remainingSlots: 1,
+      playerPower: 2000,
+      shouldKeepItem: (item) => shouldKeepItem(item, rarePlusFilter),
+      random: new SeededRandom(2),
+    });
+
+    expect(report.items.every((item) => shouldKeepItem(item, rarePlusFilter))).toBe(true);
+    expect(report.filteredItems.length).toBeGreaterThan(0);
+    expect(report.filteredItems.every((item) => !shouldKeepItem(item, rarePlusFilter))).toBe(true);
+    expect(report.items.length).toBeLessThanOrEqual(1);
+    expect(report.rejectedItems).toBe(Math.max(0, fullCapacityReport.items.length - 1));
+    expect(report.rejectedItems).toBeLessThan(
+      fullCapacityReport.items.length + fullCapacityReport.filteredItems.length - 1,
+    );
     expect(report.wasInterrupted).toBe(report.rejectedItems > 0);
   });
 

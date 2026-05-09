@@ -10,10 +10,12 @@
 - 装备对比能返回属性差值列表。
 - 戒指对比会选择评分较低的已穿戴戒指作为目标。
 - 分解确认能展示保护原因。
+- `ItemSlot.vue` 和 `ItemCompareModal.vue` 不再直接调用 `@/core/item/filter`，装备评分、评分差、更优判断和对比结果由 `useItemPresentation` 提供。
 
 ## 实现取舍
 
 - 弹窗状态暂放在 `ItemSlot.vue` 和 `RightPanel.vue` 局部状态中。
+- 装备展示派生数据先放在 composable 中，暂不新增 `inventoryUi` store。
 - 暂不引入 `@vue/test-utils`，组件交互主要通过类型检查和核心/store 测试保障。
 - 分解确认弹窗暂不展示装备图标，后续美术资源补齐后再加。
 

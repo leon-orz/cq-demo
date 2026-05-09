@@ -1,6 +1,18 @@
 import { defineStore } from 'pinia';
-import { defaultInventoryViewFilter, hasActiveInventoryViewFilter } from '@/core/item/inventoryView';
-import type { BaseSlot, InventorySortKey, InventoryViewFilter, Rarity, SortDirection } from '@/types/item';
+import {
+  defaultInventoryViewFilter,
+  getInventoryViewItems,
+  hasActiveInventoryViewFilter,
+} from '@/core/item/inventoryView';
+import type {
+  BaseSlot,
+  EquippedItems,
+  InventorySortKey,
+  InventoryViewFilter,
+  Item,
+  Rarity,
+  SortDirection,
+} from '@/types/item';
 
 interface InventoryViewState extends InventoryViewFilter {
   isFilterPanelOpen: boolean;
@@ -29,6 +41,21 @@ export const useInventoryViewStore = defineStore('inventoryView', {
 
     hasActiveFilter(): boolean {
       return hasActiveInventoryViewFilter(this.filter);
+    },
+
+    visibleItems(): (items: Item[], equipped: EquippedItems) => Item[] {
+      return (items, equipped) => getInventoryViewItems(items, this.filter, equipped);
+    },
+
+    emptyText(): (totalCount: number) => string {
+      return (totalCount) => {
+        if (totalCount === 0) return '背包为空，挑战怪物获取装备。';
+        return '没有符合当前筛选条件的装备。';
+      };
+    },
+
+    showReset(): (totalCount: number) => boolean {
+      return (totalCount) => totalCount > 0 && this.hasActiveFilter;
     },
   },
 

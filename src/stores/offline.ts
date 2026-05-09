@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import { calculatePlayerPower } from '@/core/combat/reward';
+import { getRejectedItemMaterialValue, shouldKeepItem } from '@/core/item/filter';
 import { calculateOfflineReward } from '@/core/offline/reward';
 import type { OfflineReport } from '@/types/offline';
 import { MIN_OFFLINE_SECONDS } from '@/utils/constants';
@@ -7,6 +8,7 @@ import { useCombatStore } from './combat';
 import { useInventoryStore } from './inventory';
 import { usePlayerStore } from './player';
 import { useSaveStore } from './save';
+import { useSettingsStore } from './settings';
 
 interface OfflineState {
   pendingReport: OfflineReport | null;
@@ -29,6 +31,7 @@ export const useOfflineStore = defineStore('offline', {
       const inventory = useInventoryStore();
       const combat = useCombatStore();
       const save = useSaveStore();
+      const settings = useSettingsStore();
       const playerPower = calculatePlayerPower(player.dps, player.ehp);
 
       const report = calculateOfflineReward({
@@ -44,6 +47,7 @@ export const useOfflineStore = defineStore('offline', {
         stage: combat.currentStage,
         remainingSlots: inventory.remainingSlots,
         playerPower,
+        shouldKeepItem: (item) => shouldKeepItem(item, settings.lootFilter),
       });
 
       this.lastCheckedAt = now;
@@ -51,7 +55,10 @@ export const useOfflineStore = defineStore('offline', {
 
       if (
         report.totalSeconds < MIN_OFFLINE_SECONDS ||
-        (report.monstersKilled === 0 && report.gold === 0 && report.items.length === 0)
+        (report.monstersKilled === 0 &&
+          report.gold === 0 &&
+          report.items.length === 0 &&
+          report.filteredItems.length === 0)
       ) {
         this.pendingReport = null;
         return null;
@@ -68,9 +75,17 @@ export const useOfflineStore = defineStore('offline', {
       const player = usePlayerStore();
       const inventory = useInventoryStore();
       const combat = useCombatStore();
+      const settings = useSettingsStore();
 
       inventory.addGold(report.gold);
-      report.items.forEach((item) => inventory.processDroppedItem(item));
+      if (settings.lootFilter.autoConvertRejected) {
+        inventory.enhancementStones += report.filteredItems.reduce(
+          (sum, item) => sum + getRejectedItemMaterialValue(item),
+          0,
+        );
+        inventory.autoConvertedDrops += report.filteredItems.length;
+      }
+      report.items.forEach((item) => inventory.addItem(item));
       inventory.lostDrops += report.rejectedItems;
       player.gainExp(report.exp);
       combat.playerPower = report.playerPower;

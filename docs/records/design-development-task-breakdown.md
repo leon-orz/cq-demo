@@ -96,6 +96,16 @@
   - [x] 独立背包视图状态接入排序字段、筛选条件和重置动作。
   - [x] 背包 UI 接入排序入口、筛选面板、升降序和空结果状态。
   - [x] 核心逻辑测试与集成验证。
+- [x] 背包装备展示数据流整理。
+  - [x] 装备评分、评分差、更优判断迁入 `useItemPresentation`。
+  - [x] 装备对比结果由 composable 提供，弹窗只负责展示。
+  - [x] 背包可见列表、空文案和重置入口显示判断由 `inventoryView` store 提供。
+  - [x] `ItemSlot.vue`、`ItemCompareModal.vue`、`RightPanel.vue` 不再直接调用 `@/core/item/*`。
+- [x] 右侧背包面板拆分。
+  - [x] 资源统计拆入 `InventoryResourceSummary.vue`。
+  - [x] 分解入口拆入 `InventoryDecomposePanel.vue`。
+  - [x] 拾取过滤设置拆入 `LootFilterSettings.vue`。
+  - [x] 背包工具栏、列表和筛选面板组合拆入 `InventoryListSection.vue`。
 
 验收标准：
 
@@ -113,8 +123,11 @@
 - [x] `composables/useOfflineCheck.ts`：启动和恢复时结算离线收益。
 - [x] `stores/save.ts`：最后保存时间。
 - [x] `components/offline/RewardReport.vue`：离线收益报告弹窗。
+- [x] 离线收益先执行拾取过滤，再按背包剩余空间截断。
+  - [x] 过滤装备记录到 `OfflineReport.filteredItems`。
+  - [x] 自动转化装备不占用背包空间。
+  - [x] `rejectedItems` 只统计过滤后仍需入包但容量不足的装备。
 - [ ] localForage 快照、导入导出和版本迁移。
-- [ ] 离线收益先执行拾取过滤，再按背包剩余空间截断。
 - [ ] 开箱动画、领取反馈和传说装备优先展示。
 
 风险点：
@@ -143,12 +156,11 @@
 
 优先级 P0：
 
-- 优化离线收益领取流程：先按拾取过滤处理装备，再计算背包容量截断，避免可转化装备占用离线奖励空间。
 - 建立完整存档服务：localForage 快照、导入导出、版本号和基础迁移。
-- 拆分右侧面板：将拾取过滤、背包整理和资源统计拆成更清晰的子组件。
 
 优先级 P1：
 
+- 将 `RewardReport.vue` 的时间格式化迁到通用工具或离线展示 composable，清理组件层最后的低风险 core 工具引用。
 - 增加装备流派评分权重，为暴击、攻速、坦克和主属性构筑提供更可信的“更优”判断。
 - 增加装备资源占位目录和正式资源替换说明，先接入图标路径常量，不引入未完成美术。
 - 补充移动端交互测试或组件测试依赖，覆盖对比弹窗、分解弹窗和筛选抽屉。

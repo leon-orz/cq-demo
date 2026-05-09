@@ -72,8 +72,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
-import { getItemCompareResult } from '@/core/item/filter';
+import { useItemPresentation } from '@/composables/useItemPresentation';
 import { usePlayerStore } from '@/stores/player';
 import type { Item, StatKey } from '@/types/item';
 import { rarityClass } from '@/utils/format';
@@ -88,7 +87,10 @@ defineEmits<{
 }>();
 
 const player = usePlayerStore();
-const compare = computed(() => getItemCompareResult(props.item, player.equipped));
+const { compare } = useItemPresentation(
+  () => props.item,
+  () => player.equipped,
+);
 
 function statLabel(stat: StatKey): string {
   const labels: Record<StatKey, string> = {

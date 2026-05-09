@@ -44,6 +44,9 @@
         <p v-if="report.wasInterrupted" class="mt-2 text-amber-200">
           背包空间不足，离线收益已提前截断，未拾取装备 {{ report.rejectedItems }} 件。
         </p>
+        <p v-if="report.filteredItems.length > 0" class="mt-2 text-cyan-200">
+          拾取过滤自动转化 {{ report.filteredItems.length }} 件装备。
+        </p>
       </div>
 
       <div v-if="report.items.length > 0" class="mt-4 max-h-48 space-y-2 overflow-y-auto pr-1">
