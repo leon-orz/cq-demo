@@ -79,6 +79,7 @@ docs/
 
 - [开发记录索引](docs/records/README.md)
 - [剩余工作清单](docs/backlog/remaining-work-2026-05-09.md)
+- [当前阶段设计方向](docs/design/current-design-direction-2026-05-09.md)
 - [项目状态评估](docs/reports/project-status-2026-05-09.md)
 - [总任务拆解](docs/records/design-development-task-breakdown.md)
 - [依赖升级记录](docs/records/dependency-upgrade-notes.md)
