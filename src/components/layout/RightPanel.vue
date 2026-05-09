@@ -12,6 +12,7 @@
       :gold="inventory.gold"
       :lost-drops="inventory.lostDrops"
     />
+    <SaveManagementPanel />
     <LootFilterSettings
       :auto-convert-rejected="settings.lootFilter.autoConvertRejected"
       :auto-converted-drops="inventory.autoConvertedDrops"
@@ -50,6 +51,7 @@ import InventoryDecomposePanel from '@/components/inventory/InventoryDecomposePa
 import InventoryListSection from '@/components/inventory/InventoryListSection.vue';
 import InventoryResourceSummary from '@/components/inventory/InventoryResourceSummary.vue';
 import LootFilterSettings from '@/components/inventory/LootFilterSettings.vue';
+import SaveManagementPanel from '@/components/save/SaveManagementPanel.vue';
 import { useInventoryStore } from '@/stores/inventory';
 import { useInventoryViewStore } from '@/stores/inventoryView';
 import { usePlayerStore } from '@/stores/player';

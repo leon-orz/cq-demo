@@ -17,7 +17,7 @@
 - `npm run test:run`
 - `npm run build`
 
-当前测试结果为 14 个测试文件、45 条测试通过。
+当前测试结果为 15 个测试文件、54 条测试通过。
 
 ## 文档分组
 
@@ -48,6 +48,7 @@
 - `art-resource-requirements-inventory-quality.md`：锁定、分解保护、拾取过滤和更优装备资源。
 - `art-resource-requirements-inventory-modal.md`：装备对比和分解确认弹窗资源。
 - `art-resource-requirements-equipment-sort-filter.md`：排序筛选入口、筛选面板、空结果和筛选状态资源。
+- `art-resource-requirements-save-management.md`：存档保存、读取、导入导出和覆盖确认资源。
 
 ## 维护规则
 
