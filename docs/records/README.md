@@ -2,7 +2,7 @@
 
 本目录用于保存阶段计划、阶段复盘、美术资源需求和每日复盘。临时接续计划完成后应合并进每日复盘或阶段文档，不长期保留。
 
-历史阶段复盘和每日复盘保留当日状态，不作为当前待办入口；当前待办以总任务拆解和 `../backlog/remaining-work-2026-05-09.md` 为准。
+历史阶段复盘和每日复盘保留当日状态，不作为当前待办入口；当前待办以当前阶段设计方向、连续开发路线图、总任务拆解和 `../backlog/remaining-work-2026-05-09.md` 为准。
 
 ## 当前主线状态
 
@@ -25,6 +25,11 @@
 
 ### 总览和长期计划
 
+- `../../game-design-document.md`：原始 GDD，已补充 2026-05-09 阶段修订说明。
+- `../../game-development-document.md`：原始开发文档，已补充 2026-05-09 阶段修订说明。
+- `../design/current-design-direction-2026-05-09.md`：当前阶段设计方向。
+- `../plans/continuous-development-roadmap-2026-05-09.md`：从当前原型到正式可玩的连续开发路线图。
+- `../reports/project-status-2026-05-09.md`：项目完成度和真实产品状态评估。
 - `design-development-task-breakdown.md`：总任务拆解、里程碑、近期任务队列和主要风险。
 - `../backlog/remaining-work-2026-05-09.md`：当前剩余工作清单和后续排期入口。
 - `runnable-code-skeleton-plan.md`：最初可运行骨架计划，主要作为历史参考。
@@ -35,6 +40,8 @@
 - `daily-review-2026-05-07.md`：最小可行闭环、离线收益、背包整理、排序筛选阶段完成记录。
 - `daily-review-2026-05-08.md`：数据流边界整理、离线收益顺序优化和文档整理记录。
 - `daily-review-2026-05-09.md`：本地存档、导入导出 UI、文档整理和剩余工作清单记录。
+- `design-alignment-2026-05-09.md`：当前设计方向、核心落地系统和未来扩展的对齐记录。
+- `next-session-plan-2026-05-09.md`：下次临时接续计划，完成后应沉淀进复盘并删除。
 
 ### 阶段计划与复盘
 

@@ -25,7 +25,12 @@
 
 - 新增 `docs/records/art-resource-requirements-save-management.md`。
 - 新增 `docs/backlog/remaining-work-2026-05-09.md`，集中记录剩余工作。
+- 新增 `docs/reports/project-status-2026-05-09.md`，记录按计划和真实产品体验两个维度的完成度。
+- 新增 `docs/design/current-design-direction-2026-05-09.md`，明确下一阶段主线为“构筑选择 -> 推层目标 -> 掉落反馈”。
+- 新增 `docs/plans/continuous-development-roadmap-2026-05-09.md`，区分当前正式可玩核心系统和未来长期扩展。
+- 新增 `docs/records/design-alignment-2026-05-09.md`，记录本次设计对齐结论和设计红线。
 - 更新 `README.md`、`docs/records/README.md` 和总任务拆解。
+- 更新 `game-design-document.md` 与 `game-development-document.md`，补充 2026-05-09 阶段修订说明。
 - 删除已完成的临时接续计划 `docs/records/next-day-plan-2026-05-09.md`。
 
 ## 验证结果
@@ -46,10 +51,21 @@
 主要缺口：
 
 - 装备评分仍是通用权重，缺少构筑偏好。
-- 正式美术、音效和动效仍未接入。
-- 天赋树、推荐挂机层、构筑路线和长期装备系统尚未开始。
+- 推层目标仍偏后台数值，玩家还不知道适合挂机哪层、为什么失败、为什么收益降低。
+- 掉落和离线领取反馈仍偏静态文字，关键奖励爽点不足。
+- 正式美术、音效和动效仍未接入，但不应早于核心目标系统。
+- 天赋树、强化、转生、套装、多职业等长期系统尚未开始，已明确后置。
 - 组件交互测试仍未补齐。
 
 ## 下一步建议
 
-优先做装备流派评分权重。该任务会直接提升更优装备、自动分解保护、只看更优和装备对比的可信度，是进入构筑阶段前最重要的数值基础。
+下一次从“构筑评分系统”开始。该任务会直接提升更优装备、自动分解保护、只看更优和装备对比的可信度，是连接当前装备系统和未来 Build 系统的最小桥梁。
+
+建议顺序：
+
+1. 梳理当前 `calculateItemScore()`、`isBetterThanEquipped()`、装备对比和背包筛选调用链。
+2. 新增评分模式类型：`balanced`、`crit`、`speed`、`tank`。
+3. 保留当前通用评分为 `balanced` 默认模式。
+4. 将评分偏好保存到 `settings` 或 `player`。
+5. 让更优高亮、装备对比、只看更优、分解保护使用同一评分偏好。
+6. 补核心测试，验证同一批装备在不同评分模式下排序不同。

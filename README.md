@@ -1,6 +1,6 @@
 # cq-demo
 
-Vue 3 + TypeScript 的 H5 放置型 ARPG 原型。当前已经跑通可测试的核心玩法闭环，下一阶段重点是构筑评分、资源占位、组件交互测试和表现增强。
+Vue 3 + TypeScript 的 H5 放置型 ARPG 原型。当前已经跑通可测试的核心玩法闭环，下一阶段主线是“构筑选择 -> 推层目标 -> 掉落反馈”，先补正式可玩的核心目标，再做长期扩展。
 
 当前核心闭环：
 
@@ -52,6 +52,9 @@ tests/
 
 docs/
 ├── backlog/      # 剩余工作清单和后续排期入口
+├── design/       # 当前阶段设计方向和阶段修订
+├── plans/        # 连续开发路线图
+├── reports/      # 项目状态评估
 └── records/      # 开发记录、阶段复盘、美术资源需求和每日复盘
 ```
 
@@ -72,14 +75,16 @@ docs/
 
 当前已知重点任务：
 
-- 增加装备流派评分权重，为暴击、攻速、坦克和主属性构筑提供更可信的“更优”判断。
-- 增加装备资源占位目录和正式资源替换说明。
+- 构筑评分系统：让更优判断、装备对比、只看更优和分解保护支持流派偏好。
+- 推层目标系统：让玩家知道适合挂机哪层、为什么失败、为什么收益降低。
+- 掉落反馈系统：强化传说掉落、离线领取、背包满损失和层数突破反馈。
 
 ## 文档入口
 
 - [开发记录索引](docs/records/README.md)
 - [剩余工作清单](docs/backlog/remaining-work-2026-05-09.md)
 - [当前阶段设计方向](docs/design/current-design-direction-2026-05-09.md)
+- [连续开发路线图](docs/plans/continuous-development-roadmap-2026-05-09.md)
 - [项目状态评估](docs/reports/project-status-2026-05-09.md)
 - [总任务拆解](docs/records/design-development-task-breakdown.md)
 - [依赖升级记录](docs/records/dependency-upgrade-notes.md)
