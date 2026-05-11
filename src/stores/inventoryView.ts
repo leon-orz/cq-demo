@@ -10,6 +10,7 @@ import type {
   InventorySortKey,
   InventoryViewFilter,
   Item,
+  ItemScoreMode,
   Rarity,
   SortDirection,
 } from '@/types/item';
@@ -43,8 +44,8 @@ export const useInventoryViewStore = defineStore('inventoryView', {
       return hasActiveInventoryViewFilter(this.filter);
     },
 
-    visibleItems(): (items: Item[], equipped: EquippedItems) => Item[] {
-      return (items, equipped) => getInventoryViewItems(items, this.filter, equipped);
+    visibleItems(): (items: Item[], equipped: EquippedItems, scoreMode: ItemScoreMode) => Item[] {
+      return (items, equipped, scoreMode) => getInventoryViewItems(items, this.filter, equipped, scoreMode);
     },
 
     emptyText(): (totalCount: number) => string {

@@ -1,5 +1,7 @@
 export type Rarity = 'normal' | 'magic' | 'rare' | 'legendary' | 'ancient';
 
+export type ItemScoreMode = 'balanced' | 'crit' | 'speed' | 'tank' | 'mainAttribute';
+
 export type EquipmentSlot =
   | 'weapon'
   | 'offhand'

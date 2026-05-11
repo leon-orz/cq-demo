@@ -11,7 +11,7 @@
           <p class="text-xs uppercase text-slate-500">装备对比</p>
           <h2 class="text-xl font-semibold text-slate-100">{{ item.name }}</h2>
           <p class="mt-1 text-sm text-slate-400">
-            目标部位 {{ compare.targetSlot }} · 评分 {{ compare.itemScore }}
+            目标部位 {{ compare.targetSlot }} · {{ scoreModeLabel }}评分 {{ compare.itemScore }}
             <span :class="compare.scoreDelta >= 0 ? 'text-emerald-300' : 'text-red-300'">
               （{{ compare.scoreDelta >= 0 ? '+' : '' }}{{ compare.scoreDelta }}）
             </span>
@@ -29,12 +29,12 @@
         <div class="rounded border border-line bg-ink p-3">
           <p class="mb-2 text-sm text-slate-500">当前装备</p>
           <h3 class="font-semibold text-slate-200">{{ compare.equippedItem?.name ?? '空槽' }}</h3>
-          <p class="text-sm text-slate-500">评分 {{ compare.equippedScore }}</p>
+          <p class="text-sm text-slate-500">{{ scoreModeLabel }}评分 {{ compare.equippedScore }}</p>
         </div>
         <div class="rounded border bg-ink p-3" :class="rarityClass(item.rarity)">
           <p class="mb-2 text-sm text-slate-500">新装备</p>
           <h3 class="font-semibold">{{ item.name }}</h3>
-          <p class="text-sm text-slate-500">评分 {{ compare.itemScore }}</p>
+          <p class="text-sm text-slate-500">{{ scoreModeLabel }}评分 {{ compare.itemScore }}</p>
         </div>
       </div>
 
@@ -87,7 +87,7 @@ defineEmits<{
 }>();
 
 const player = usePlayerStore();
-const { compare } = useItemPresentation(
+const { compare, scoreModeLabel } = useItemPresentation(
   () => props.item,
   () => player.equipped,
 );

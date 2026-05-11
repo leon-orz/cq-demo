@@ -60,4 +60,35 @@ describe('装备过滤与对比', () => {
     expect(calculateItemScore(better)).toBeGreaterThan(calculateItemScore(equipped.weapon!));
     expect(compareItemWithEquipped(better, equipped)).toBeGreaterThan(0);
   });
+
+  it('不同评分偏好应改变装备推荐结果', () => {
+    const critItem = createItem({
+      id: 'crit',
+      baseStats: {},
+      affixes: [{ id: 'crit_affix', name: '鹰眼', stat: 'critChance', value: 10, valueType: 'flat', tier: 1 }],
+    });
+    const tankItem = createItem({
+      id: 'tank',
+      baseStats: { hp: 140, armor: 18 },
+      affixes: [],
+    });
+
+    expect(calculateItemScore(critItem, 'crit')).toBeGreaterThan(calculateItemScore(tankItem, 'crit'));
+    expect(calculateItemScore(tankItem, 'tank')).toBeGreaterThan(calculateItemScore(critItem, 'tank'));
+  });
+
+  it('更优判断应使用传入的评分偏好', () => {
+    const equipped = {
+      ...emptyEquipped,
+      weapon: createItem({ id: 'old', baseStats: { attack: 30 } }),
+    };
+    const critItem = createItem({
+      id: 'crit',
+      baseStats: {},
+      affixes: [{ id: 'crit_affix', name: '鹰眼', stat: 'critChance', value: 4, valueType: 'flat', tier: 1 }],
+    });
+
+    expect(compareItemWithEquipped(critItem, equipped, 'balanced')).toBeLessThan(0);
+    expect(compareItemWithEquipped(critItem, equipped, 'crit')).toBeGreaterThan(0);
+  });
 });

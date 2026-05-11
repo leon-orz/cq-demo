@@ -20,7 +20,7 @@
         <h3 class="truncate pr-10 font-semibold">{{ item.name }}</h3>
         <p class="text-xs text-slate-500">{{ rarityLabel(item.rarity) }} · iLv {{ item.itemLevel }}</p>
         <p class="text-xs" :class="scoreDiff >= 0 ? 'text-emerald-300' : 'text-red-300'">
-          评分 {{ itemScore }}（{{ scoreDiff >= 0 ? '+' : '' }}{{ scoreDiff }}）
+          {{ scoreModeLabel }}评分 {{ itemScore }}（{{ scoreDiff >= 0 ? '+' : '' }}{{ scoreDiff }}）
         </p>
       </div>
       <div class="flex shrink-0 flex-col gap-1">
@@ -61,7 +61,7 @@ const props = defineProps<{
 const player = usePlayerStore();
 const inventory = useInventoryStore();
 const showCompare = ref(false);
-const { itemScore, scoreDiff, isUpgrade } = useItemPresentation(
+const { itemScore, scoreDiff, isUpgrade, scoreModeLabel } = useItemPresentation(
   () => props.item,
   () => player.equipped,
 );

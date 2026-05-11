@@ -44,6 +44,7 @@ function createSnapshot(overrides: Partial<GameSaveSnapshot> = {}): GameSaveSnap
       autoConvertedDrops: 2,
     },
     settings: {
+      itemScoreMode: 'balanced',
       lootFilter: {
         minRarity: 'magic',
         keepSlots: ['weapon'],
@@ -103,6 +104,17 @@ describe('存档迁移', () => {
       currentStage: 3,
       highestUnlockedStage: 5,
     });
+  });
+
+  it('旧存档缺少评分偏好时应补均衡模式', () => {
+    const snapshot = createSnapshot();
+    const legacySettings = { ...snapshot.settings } as Partial<GameSaveSnapshot['settings']>;
+    delete legacySettings.itemScoreMode;
+
+    const result = migrateSaveSnapshot({ ...snapshot, settings: legacySettings });
+
+    expect(result.ok).toBe(true);
+    expect(result.snapshot?.settings.itemScoreMode).toBe('balanced');
   });
 
   it('缺少版本号时应返回错误', () => {

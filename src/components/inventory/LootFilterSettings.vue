@@ -49,7 +49,7 @@
           :checked="protectBetterItems"
           @change="$emit('update:protectBetterItems', ($event.target as HTMLInputElement).checked)"
         />
-        分解时保护评分更优装备
+        分解时保护{{ scoreModeLabel }}评分更优装备
       </label>
     </div>
     <p class="mt-3 text-xs text-slate-500">分解候选 {{ candidateCount }} 件，已保护 {{ protectedCount }} 件。</p>
@@ -69,6 +69,7 @@ defineProps<{
   protectBetterItems: boolean;
   candidateCount: number;
   protectedCount: number;
+  scoreModeLabel: string;
 }>();
 
 defineEmits<{

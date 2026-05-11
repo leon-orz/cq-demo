@@ -68,4 +68,25 @@ describe('背包状态', () => {
     expect(inventory.items.some((item) => item.baseStats.attack === 100)).toBe(true);
     expect(preview.protectedItems.some((entry) => entry.reason === '锁定保护')).toBe(true);
   });
+
+  it('分解保护应按当前评分偏好判断更优装备', () => {
+    const inventory = useInventoryStore();
+    const player = usePlayerStore();
+    const settings = useSettingsStore();
+    settings.protectBetterItems = true;
+    settings.setItemScoreMode('crit');
+    player.equipped.weapon = { ...createItem(99), baseStats: { attack: 10 } };
+
+    inventory.addItem(createItem(1));
+    inventory.addItem({
+      ...createItem(2),
+      baseStats: {},
+      affixes: [{ id: 'crit_affix', name: '鹰眼', stat: 'critChance', value: 3, valueType: 'flat', tier: 1 }],
+    });
+
+    const decomposed = inventory.decomposeLowRarity();
+
+    expect(decomposed).toBe(1);
+    expect(inventory.items.map((item) => item.id)).toEqual(['item_2']);
+  });
 });

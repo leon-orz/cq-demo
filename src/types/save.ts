@@ -1,4 +1,13 @@
-import type { BaseSlot, EquippedItems, InventorySortKey, Item, LootFilterRule, Rarity, SortDirection } from './item';
+import type {
+  BaseSlot,
+  EquippedItems,
+  InventorySortKey,
+  Item,
+  ItemScoreMode,
+  LootFilterRule,
+  Rarity,
+  SortDirection,
+} from './item';
 import type { MainAttribute, PlayerBaseStats, SkillNode } from './player';
 
 export interface PlayerSaveState {
@@ -21,6 +30,7 @@ export interface InventorySaveState {
 }
 
 export interface SettingsSaveState {
+  itemScoreMode: ItemScoreMode;
   lootFilter: LootFilterRule;
   protectRareAndAbove: boolean;
   protectBetterItems: boolean;

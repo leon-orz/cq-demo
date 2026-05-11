@@ -120,7 +120,7 @@ export const useInventoryStore = defineStore('inventory', {
           : settings.protectRareAndAbove &&
               (item.rarity === 'rare' || item.rarity === 'legendary' || item.rarity === 'ancient')
             ? '品质保护'
-            : settings.protectBetterItems && isBetterThanEquipped(item, player.equipped)
+            : settings.protectBetterItems && isBetterThanEquipped(item, player.equipped, settings.itemScoreMode)
               ? '更优保护'
               : null;
 

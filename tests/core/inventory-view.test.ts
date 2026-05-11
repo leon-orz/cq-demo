@@ -59,6 +59,26 @@ describe('背包视图排序与筛选', () => {
     expect(items.map((item) => item.id)).toEqual(['low', 'high', 'mid']);
   });
 
+  it('按评分排序时应使用传入的评分偏好', () => {
+    const items = [
+      createItem({
+        id: 'crit',
+        baseStats: {},
+        affixes: [{ id: 'crit_affix', name: '鹰眼', stat: 'critChance', value: 10, valueType: 'flat', tier: 1 }],
+      }),
+      createItem({ id: 'tank', baseStats: { hp: 140, armor: 18 } }),
+    ];
+
+    expect(sortInventoryItems(items, createFilter({ sortKey: 'score' }), 'crit').map((item) => item.id)).toEqual([
+      'crit',
+      'tank',
+    ]);
+    expect(sortInventoryItems(items, createFilter({ sortKey: 'score' }), 'tank').map((item) => item.id)).toEqual([
+      'tank',
+      'crit',
+    ]);
+  });
+
   it('应按品质和部位固定顺序排序', () => {
     const raritySorted = sortInventoryItems(
       [
@@ -133,5 +153,24 @@ describe('背包视图排序与筛选', () => {
     const visible = getInventoryViewItems(items, createFilter({ onlyUpgrades: true }), equipped);
 
     expect(visible.map((item) => item.id)).toEqual(['better']);
+  });
+
+  it('只看更优装备时应使用传入的评分偏好', () => {
+    const equipped: EquippedItems = {
+      ...emptyEquipped,
+      weapon: createItem({ id: 'equipped', baseStats: { attack: 10 } }),
+    };
+    const items = [
+      createItem({
+        id: 'crit',
+        baseStats: {},
+        affixes: [{ id: 'crit_affix', name: '鹰眼', stat: 'critChance', value: 3, valueType: 'flat', tier: 1 }],
+      }),
+      createItem({ id: 'weak', baseStats: { attack: 1 } }),
+    ];
+
+    const visible = getInventoryViewItems(items, createFilter({ onlyUpgrades: true }), equipped, 'crit');
+
+    expect(visible.map((item) => item.id)).toEqual(['crit']);
   });
 });

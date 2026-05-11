@@ -88,7 +88,7 @@ describe('背包视图状态', () => {
 
     inventoryView.toggleRarity('rare');
 
-    const visibleItems = inventoryView.visibleItems(items, emptyEquipped);
+    const visibleItems = inventoryView.visibleItems(items, emptyEquipped, 'balanced');
 
     expect(visibleItems.map((item) => item.id)).toEqual(['high', 'low']);
     expect(items.map((item) => item.id)).toEqual(['low', 'hidden', 'high']);

@@ -21,6 +21,7 @@
       :protect-better-items="settings.protectBetterItems"
       :protect-rare-and-above="settings.protectRareAndAbove"
       :protected-count="decomposePreview.protectedItems.length"
+      :score-mode-label="settings.itemScoreModeLabel"
       @apply-preset="settings.applyLootFilterPreset"
       @set-auto-convert-rejected="settings.setAutoConvertRejected"
       @set-min-rarity="settings.setMinRarity"
@@ -63,7 +64,9 @@ const player = usePlayerStore();
 const settings = useSettingsStore();
 const showDecomposeConfirm = ref(false);
 const decomposePreview = computed(() => inventory.previewDecomposeLowRarity());
-const visibleItems = computed(() => inventoryView.visibleItems(inventory.items, player.equipped));
+const visibleItems = computed(() =>
+  inventoryView.visibleItems(inventory.items, player.equipped, settings.itemScoreMode),
+);
 const emptyText = computed(() => inventoryView.emptyText(inventory.items.length));
 const showReset = computed(() => inventoryView.showReset(inventory.items.length));
 

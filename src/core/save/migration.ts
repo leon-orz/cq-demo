@@ -1,3 +1,4 @@
+import { defaultItemScoreMode, isItemScoreMode } from '@/core/item/filter';
 import type { GameSaveSnapshot } from '@/types/save';
 
 export const CURRENT_SAVE_SCHEMA_VERSION = 1;
@@ -42,12 +43,16 @@ function normalizeV1Snapshot(input: Record<string, unknown>): SaveMigrationResul
 
   const savedAt = typeof input.savedAt === 'number' ? input.savedAt : Date.now();
   const combat = input.combat as Record<string, unknown>;
+  const settings = input.settings as Record<string, unknown>;
   const snapshot = {
     schemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
     savedAt,
     player: input.player,
     inventory: input.inventory,
-    settings: input.settings,
+    settings: {
+      ...settings,
+      itemScoreMode: isItemScoreMode(settings.itemScoreMode) ? settings.itemScoreMode : defaultItemScoreMode,
+    },
     inventoryView: input.inventoryView,
     combat: {
       currentStage: combat.currentStage,

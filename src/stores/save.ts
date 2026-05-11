@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia';
+import { defaultItemScoreMode, isItemScoreMode } from '@/core/item/filter';
 import { CURRENT_SAVE_SCHEMA_VERSION, cloneSaveSnapshot } from '@/core/save/migration';
 import {
   exportSaveSnapshot,
@@ -63,6 +64,7 @@ export const useSaveStore = defineStore('save', {
           autoConvertedDrops: inventory.autoConvertedDrops,
         },
         settings: {
+          itemScoreMode: settings.itemScoreMode,
           lootFilter: settings.lootFilter,
           protectRareAndAbove: settings.protectRareAndAbove,
           protectBetterItems: settings.protectBetterItems,
@@ -99,6 +101,9 @@ export const useSaveStore = defineStore('save', {
       player.$patch(clonedSnapshot.player);
       inventory.$patch(clonedSnapshot.inventory);
       settings.$patch({
+        itemScoreMode: isItemScoreMode(clonedSnapshot.settings.itemScoreMode)
+          ? clonedSnapshot.settings.itemScoreMode
+          : defaultItemScoreMode,
         lootFilter: {
           ...clonedSnapshot.settings.lootFilter,
           keepSlots: [...clonedSnapshot.settings.lootFilter.keepSlots],

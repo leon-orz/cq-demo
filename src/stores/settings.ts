@@ -1,10 +1,11 @@
 import { defineStore } from 'pinia';
-import { defaultLootFilterRule } from '@/core/item/filter';
-import type { BaseSlot, LootFilterRule, Rarity, StatKey } from '@/types/item';
+import { defaultItemScoreMode, defaultLootFilterRule, itemScoreModeOptions } from '@/core/item/filter';
+import type { BaseSlot, ItemScoreMode, LootFilterRule, Rarity, StatKey } from '@/types/item';
 
 type LootFilterPreset = 'loose' | 'magicPlus' | 'rarePlus';
 
 interface SettingsState {
+  itemScoreMode: ItemScoreMode;
   lootFilter: LootFilterRule;
   protectRareAndAbove: boolean;
   protectBetterItems: boolean;
@@ -12,12 +13,23 @@ interface SettingsState {
 
 export const useSettingsStore = defineStore('settings', {
   state: (): SettingsState => ({
+    itemScoreMode: defaultItemScoreMode,
     lootFilter: { ...defaultLootFilterRule },
     protectRareAndAbove: true,
     protectBetterItems: true,
   }),
 
+  getters: {
+    itemScoreModeLabel: (state) => {
+      return itemScoreModeOptions.find((option) => option.value === state.itemScoreMode)?.label ?? '均衡';
+    },
+  },
+
   actions: {
+    setItemScoreMode(mode: ItemScoreMode) {
+      this.itemScoreMode = mode;
+    },
+
     setMinRarity(minRarity: Rarity) {
       this.lootFilter.minRarity = minRarity;
     },

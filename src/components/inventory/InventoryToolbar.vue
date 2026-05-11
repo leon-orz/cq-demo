@@ -14,6 +14,20 @@
       </button>
     </div>
 
+    <div class="mb-3">
+      <label class="block text-xs text-slate-500" for="score-mode">评分偏好</label>
+      <select
+        id="score-mode"
+        class="mt-1 w-full rounded border border-line bg-panel px-2 py-2 text-sm text-slate-100"
+        :value="settings.itemScoreMode"
+        @change="settings.setItemScoreMode(($event.target as HTMLSelectElement).value as ItemScoreMode)"
+      >
+        <option v-for="option in itemScoreModeOptions" :key="option.value" :value="option.value">
+          {{ option.label }}
+        </option>
+      </select>
+    </div>
+
     <div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
       <button
         v-for="option in sortOptions"
@@ -55,8 +69,10 @@
 </template>
 
 <script setup lang="ts">
+import { itemScoreModeOptions } from '@/core/item/filter';
 import { useInventoryViewStore } from '@/stores/inventoryView';
-import type { InventorySortKey } from '@/types/item';
+import { useSettingsStore } from '@/stores/settings';
+import type { InventorySortKey, ItemScoreMode } from '@/types/item';
 
 defineProps<{
   visibleCount: number;
@@ -64,6 +80,7 @@ defineProps<{
 }>();
 
 const inventoryView = useInventoryViewStore();
+const settings = useSettingsStore();
 
 const sortOptions: Array<{ key: InventorySortKey; label: string }> = [
   { key: 'score', label: '评分' },
