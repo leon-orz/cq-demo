@@ -8,7 +8,7 @@ import {
   createItemDropFeedback,
   createStageUnlockFeedback,
 } from '@/core/feedback/rewardFeedback';
-import { applyRewardDecay, calculatePlayerPower } from '@/core/combat/reward';
+import { applyRewardDecay } from '@/core/combat/reward';
 import type { CombatResult, ProgressionTargetSummary } from '@/types/combat';
 import { MAX_LOG_ENTRIES } from '@/utils/constants';
 import { useFeedbackStore } from './feedback';
@@ -27,8 +27,6 @@ interface CombatState {
   isAutoFighting: boolean;
   logs: CombatLog[];
   lastResult: CombatResult | null;
-  lastRewardMultiplier: number;
-  playerPower: number;
   totalAutoRuns: number;
   stoppedReason: string | null;
 }
@@ -40,15 +38,12 @@ export const useCombatStore = defineStore('combat', {
     isAutoFighting: false,
     logs: [],
     lastResult: null,
-    lastRewardMultiplier: 1,
-    playerPower: 0,
     totalAutoRuns: 0,
     stoppedReason: null,
   }),
 
   getters: {
     stageConfig: (state) => getStageConfig(state.currentStage),
-    isRewardDecayed: (state) => state.lastRewardMultiplier < 1,
     progressionSummary(): ProgressionTargetSummary {
       const player = usePlayerStore();
       return getProgressionTargetSummary(
@@ -143,9 +138,13 @@ export const useCombatStore = defineStore('combat', {
         return result;
       }
 
-      this.playerPower = calculatePlayerPower(player.dps, player.ehp);
-      const reward = applyRewardDecay(result.gold, result.exp, this.playerPower, this.stageConfig.recommendedPower);
-      this.lastRewardMultiplier = reward.multiplier;
+      const currentTarget = this.progressionSummary.current;
+      const reward = applyRewardDecay(
+        result.gold,
+        result.exp,
+        currentTarget.playerPower,
+        this.stageConfig.recommendedPower,
+      );
 
       inventory.addGold(reward.gold);
       player.gainExp(reward.exp);

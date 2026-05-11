@@ -58,8 +58,14 @@ function normalizeV1Snapshot(input: Record<string, unknown>): SaveMigrationResul
       currentStage: combat.currentStage,
       highestUnlockedStage: combat.highestUnlockedStage,
     },
+    offline: isRecord(input.offline)
+      ? input.offline
+      : {
+          pendingReport: null,
+          lastCheckedAt: null,
+        },
     save: input.save,
-  } as GameSaveSnapshot;
+  } as unknown as GameSaveSnapshot;
 
   return { ok: true, snapshot: cloneSaveSnapshot(snapshot) };
 }

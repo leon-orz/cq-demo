@@ -6,7 +6,7 @@
     </div>
     <div class="h-72 space-y-2 overflow-y-auto pr-1 text-sm">
       <p v-if="logs.length === 0" class="text-slate-500">尚未开始战斗。</p>
-      <p v-for="log in [...logs].reverse()" :key="log.id" class="rounded bg-slate-950 px-3 py-2 text-slate-300">
+      <p v-for="log in displayLogs" :key="log.id" class="rounded bg-slate-950 px-3 py-2 text-slate-300">
         {{ log.message }}
       </p>
     </div>
@@ -14,7 +14,11 @@
 </template>
 
 <script setup lang="ts">
-defineProps<{
+import { computed } from 'vue';
+
+const props = defineProps<{
   logs: Array<{ id: number; message: string }>;
 }>();
+
+const displayLogs = computed(() => [...props.logs].reverse());
 </script>

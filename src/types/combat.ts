@@ -1,19 +1,31 @@
 import type { Item } from './item';
 
+export type MonsterArchetype = 'balanced' | 'highHp' | 'highAttack' | 'reward' | 'boss';
+
+export type StageTag = 'gold' | 'exp' | 'gear' | 'boss';
+
+export type RewardFocus = 'balanced' | 'gold' | 'exp' | 'gear';
+
 export interface Monster {
   id: string;
   name: string;
+  archetype: MonsterArchetype;
   level: number;
   hp: number;
   attack: number;
   gold: number;
   exp: number;
+  isBoss?: boolean;
+  dropChance?: number;
+  dropValueMultiplier?: number;
 }
 
 export interface StageConfig {
   id: number;
   name: string;
   recommendedPower: number;
+  tags: StageTag[];
+  rewardFocus: RewardFocus;
   monsters: Monster[];
 }
 
@@ -39,7 +51,16 @@ export interface BatchResult {
   gold: number;
   exp: number;
   drops: Item[];
+  encounters: BatchEncounterResult[];
   actualSeconds: number;
+}
+
+export interface BatchEncounterResult {
+  elapsedSeconds: number;
+  duration: number;
+  gold: number;
+  exp: number;
+  drops: Item[];
 }
 
 export type StageFailureReason = 'none' | 'survival' | 'both' | 'timeout';
@@ -48,6 +69,9 @@ export interface StageTargetEvaluation {
   stage: number;
   stageName: string;
   monsterName: string;
+  monsterArchetype: MonsterArchetype;
+  tags: StageTag[];
+  rewardFocus: RewardFocus;
   recommendedPower: number;
   playerPower: number;
   rewardMultiplier: number;
@@ -56,11 +80,13 @@ export interface StageTargetEvaluation {
   survivalTime: number;
   goldPerSecond: number;
   expPerSecond: number;
+  dropValuePerSecond: number;
   farmScore: number;
   failureReason: StageFailureReason;
   failureText: string;
   rewardText: string;
   adviceText: string;
+  recommendReason: string;
 }
 
 export interface ProgressionTargetSummary {

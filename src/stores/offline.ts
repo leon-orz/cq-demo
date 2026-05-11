@@ -37,6 +37,13 @@ export const useOfflineStore = defineStore('offline', {
       const combat = useCombatStore();
       const save = useSaveStore();
       const settings = useSettingsStore();
+
+      if (this.pendingReport) {
+        this.lastCheckedAt = now;
+        save.markActive(now);
+        return this.pendingReport;
+      }
+
       const playerBuild = {
         level: player.level,
         mainAttribute: player.mainAttribute,
@@ -95,8 +102,6 @@ export const useOfflineStore = defineStore('offline', {
       report.items.forEach((item) => inventory.addItem(item));
       inventory.lostDrops += report.rejectedItems;
       player.gainExp(report.exp);
-      combat.playerPower = report.playerPower;
-      combat.lastRewardMultiplier = report.rewardMultiplier;
       combat.addLog(`离线收益已领取：${report.gold} 金币、${report.exp} 经验、${report.items.length} 件装备。`);
       feedback.pushFeedback(createOfflineClaimFeedback(report, player.equipped, settings.itemScoreMode));
       feedback.pushFeedback(createOfflineHighlightItemFeedback(report, player.equipped, settings.itemScoreMode));
@@ -114,5 +119,9 @@ export const useOfflineStore = defineStore('offline', {
     dismissPendingReport() {
       this.pendingReport = null;
     },
+  },
+
+  persist: {
+    key: 'offline',
   },
 });

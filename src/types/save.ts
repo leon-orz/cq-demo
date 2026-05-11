@@ -8,6 +8,7 @@ import type {
   Rarity,
   SortDirection,
 } from './item';
+import type { OfflineReport } from './offline';
 import type { MainAttribute, PlayerBaseStats, SkillNode } from './player';
 
 export interface PlayerSaveState {
@@ -51,6 +52,11 @@ export interface CombatSaveState {
   highestUnlockedStage: number;
 }
 
+export interface OfflineSaveState {
+  pendingReport: OfflineReport | null;
+  lastCheckedAt: number | null;
+}
+
 export interface SaveMetaState {
   version: number;
   lastActiveTime: number;
@@ -64,5 +70,6 @@ export interface GameSaveSnapshot {
   settings: SettingsSaveState;
   inventoryView: InventoryViewSaveState;
   combat: CombatSaveState;
+  offline: OfflineSaveState;
   save: SaveMetaState;
 }

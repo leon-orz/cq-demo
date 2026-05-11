@@ -1,6 +1,14 @@
 <template>
+  <button
+    v-if="report && isCollapsed"
+    class="fixed bottom-4 left-1/2 z-40 -translate-x-1/2 rounded border border-amber-500/50 bg-panel px-4 py-2 text-sm font-semibold text-amber-200 shadow-xl shadow-black/40 hover:border-amber-300"
+    @click="isCollapsed = false"
+  >
+    离线收益待领取
+  </button>
+
   <div
-    v-if="report"
+    v-if="report && !isCollapsed"
     class="fixed inset-0 z-50 grid place-items-center bg-black/70 p-4"
     role="dialog"
     aria-modal="true"
@@ -66,7 +74,7 @@
       <div class="mt-5 flex justify-end gap-2">
         <button
           class="rounded border border-line px-4 py-2 text-sm text-slate-300 hover:border-slate-500"
-          @click="dismiss"
+          @click="collapse"
         >
           稍后查看
         </button>
@@ -82,18 +90,23 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useOfflineStore } from '@/stores/offline';
 import { formatDuration, formatNumber, rarityClass } from '@/utils/format';
 
 const offline = useOfflineStore();
 const report = computed(() => offline.pendingReport);
+const isCollapsed = ref(false);
+
+watch(report, () => {
+  isCollapsed.value = false;
+});
 
 function claim() {
   offline.claimPendingReport();
 }
 
-function dismiss() {
-  offline.dismissPendingReport();
+function collapse() {
+  isCollapsed.value = true;
 }
 </script>

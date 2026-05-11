@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { CURRENT_SAVE_SCHEMA_VERSION } from '@/core/save/migration';
 import type { Item } from '@/types/item';
+import type { OfflineReport } from '@/types/offline';
 import { useSaveStore } from '@/stores/save';
 import { usePlayerStore } from '@/stores/player';
 import { useInventoryStore } from '@/stores/inventory';
@@ -47,6 +48,23 @@ function createItem(index: number): Item {
   };
 }
 
+function createOfflineReport(): OfflineReport {
+  return {
+    totalSeconds: 3600,
+    actualSeconds: 600,
+    cappedSeconds: 3600,
+    monstersKilled: 12,
+    gold: 300,
+    exp: 120,
+    items: [createItem(99)],
+    filteredItems: [],
+    rejectedItems: 0,
+    wasInterrupted: false,
+    rewardMultiplier: 1,
+    playerPower: 500,
+  };
+}
+
 describe('存档时间戳', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
@@ -69,6 +87,7 @@ describe('存档时间戳', () => {
     const settings = useSettingsStore();
     const inventoryView = useInventoryViewStore();
     const combat = useCombatStore();
+    const offline = useOfflineStore();
 
     player.name = '快照角色';
     inventory.addItem(createItem(1));
@@ -77,6 +96,8 @@ describe('存档时间戳', () => {
     inventoryView.toggleRarity('rare');
     combat.currentStage = 3;
     combat.highestUnlockedStage = 5;
+    offline.pendingReport = createOfflineReport();
+    offline.lastCheckedAt = 1500;
     save.markActive(1000);
 
     const snapshot = save.createSnapshot(2000);
@@ -88,6 +109,8 @@ describe('存档时间戳', () => {
     expect(snapshot.settings.lootFilter.minRarity).toBe('rare');
     expect(snapshot.inventoryView.rarities).toEqual(['rare']);
     expect(snapshot.combat).toEqual({ currentStage: 3, highestUnlockedStage: 5 });
+    expect(snapshot.offline.pendingReport?.gold).toBe(300);
+    expect(snapshot.offline.lastCheckedAt).toBe(1500);
     expect(snapshot.save.lastActiveTime).toBe(1000);
   });
 
@@ -109,6 +132,8 @@ describe('存档时间戳', () => {
     snapshot.inventoryView.rarities = ['rare'];
     snapshot.combat.currentStage = 4;
     snapshot.combat.highestUnlockedStage = 6;
+    snapshot.offline.pendingReport = createOfflineReport();
+    snapshot.offline.lastCheckedAt = 222;
     useInventoryViewStore().setFilterPanelOpen(true);
 
     save.restoreSnapshot(snapshot);
@@ -124,14 +149,15 @@ describe('存档时间戳', () => {
     expect(combat.isAutoFighting).toBe(false);
     expect(combat.logs).toHaveLength(0);
     expect(combat.stoppedReason).toBeNull();
-    expect(offline.pendingReport).toBeNull();
-    expect(offline.lastCheckedAt).toBeNull();
+    expect(offline.pendingReport?.gold).toBe(300);
+    expect(offline.lastCheckedAt).toBe(222);
   });
 
   it('导出后应能导入并恢复状态', () => {
     const save = useSaveStore();
     usePlayerStore().name = '导出角色';
     useInventoryStore().addItem(createItem(3));
+    useOfflineStore().pendingReport = createOfflineReport();
 
     const exported = save.exportSave(4000);
     expect(exported.ok).toBe(true);
@@ -144,7 +170,21 @@ describe('存档时间戳', () => {
     expect(imported.ok).toBe(true);
     expect(usePlayerStore().name).toBe('导出角色');
     expect(useInventoryStore().items.map((item) => item.id)).toEqual(['save_item_3']);
+    expect(useOfflineStore().pendingReport?.gold).toBe(300);
     expect(save.lastError).toBeNull();
+  });
+
+  it('导入旧快照缺少离线报告字段时应提供默认值', () => {
+    const save = useSaveStore();
+    const snapshot = save.createSnapshot(4100);
+    const legacySnapshot = JSON.parse(JSON.stringify(snapshot)) as Record<string, unknown>;
+    delete legacySnapshot.offline;
+
+    const result = save.importSave(JSON.stringify(legacySnapshot));
+
+    expect(result.ok).toBe(true);
+    expect(useOfflineStore().pendingReport).toBeNull();
+    expect(useOfflineStore().lastCheckedAt).toBeNull();
   });
 
   it('导入非法 JSON 时应返回错误且不污染现有状态', () => {

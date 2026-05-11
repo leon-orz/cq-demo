@@ -4,7 +4,8 @@ import { useCombatStore } from '@/stores/combat';
 import { useFeedbackStore } from '@/stores/feedback';
 import { useInventoryStore } from '@/stores/inventory';
 import { usePlayerStore } from '@/stores/player';
-import { INVENTORY_CAPACITY } from '@/utils/constants';
+import { INVENTORY_CAPACITY, MAX_LOG_ENTRIES } from '@/utils/constants';
+import { applyRewardDecay } from '@/core/combat/reward';
 import type { Item } from '@/types/item';
 
 function createItem(index: number): Item {
@@ -155,5 +156,50 @@ describe('战斗状态', () => {
 
     expect(result?.win).toBe(true);
     expect(combat.highestUnlockedStage).toBe(3);
+  });
+
+  it('在线结算收益倍率应与当前层评估口径一致', () => {
+    const player = usePlayerStore();
+    const combat = useCombatStore();
+    player.$patch({
+      level: 1,
+      baseStats: {
+        str: 20,
+        dex: 10,
+        int: 10,
+        hp: 2000,
+        attack: 500,
+        attackSpeed: 1,
+        critChance: 5,
+        critDamage: 150,
+        armor: 100,
+      },
+    });
+    combat.$patch({ currentStage: 3, highestUnlockedStage: 3 });
+    const expected = combat.progressionSummary.current;
+
+    const result = combat.runSingleCombat();
+    const expectedReward = applyRewardDecay(
+      result?.gold ?? 0,
+      result?.exp ?? 0,
+      expected.playerPower,
+      combat.stageConfig.recommendedPower,
+    );
+
+    expect(result?.win).toBe(true);
+    expect(useInventoryStore().gold).toBe(expectedReward.gold);
+    expect(usePlayerStore().exp).toBeGreaterThanOrEqual(expectedReward.exp);
+  });
+
+  it('战斗日志应只保留最新条目', () => {
+    const combat = useCombatStore();
+
+    for (let index = 0; index < MAX_LOG_ENTRIES + 5; index += 1) {
+      combat.addLog(`日志 ${index}`);
+    }
+
+    expect(combat.logs).toHaveLength(MAX_LOG_ENTRIES);
+    expect(combat.logs[0]?.message).toBe('日志 5');
+    expect(combat.logs.at(-1)?.message).toBe(`日志 ${MAX_LOG_ENTRIES + 4}`);
   });
 });

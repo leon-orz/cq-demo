@@ -5,7 +5,7 @@
   >
     <span
       v-if="isUpgrade"
-      class="absolute right-2 top-2 rounded bg-emerald-500 px-1.5 py-0.5 text-[10px] font-semibold text-black"
+      class="pointer-events-none absolute right-2 top-2 rounded bg-emerald-500 px-1.5 py-0.5 text-[10px] font-semibold text-black"
     >
       更优
     </span>

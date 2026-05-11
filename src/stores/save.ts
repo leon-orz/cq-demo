@@ -42,6 +42,7 @@ export const useSaveStore = defineStore('save', {
       const settings = useSettingsStore();
       const inventoryView = useInventoryViewStore();
       const combat = useCombatStore();
+      const offline = useOfflineStore();
 
       return cloneSaveSnapshot({
         schemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
@@ -81,6 +82,10 @@ export const useSaveStore = defineStore('save', {
         combat: {
           currentStage: combat.currentStage,
           highestUnlockedStage: combat.highestUnlockedStage,
+        },
+        offline: {
+          pendingReport: offline.pendingReport,
+          lastCheckedAt: offline.lastCheckedAt,
         },
         save: {
           version: this.version,
@@ -127,8 +132,8 @@ export const useSaveStore = defineStore('save', {
         stoppedReason: null,
       });
       offline.$patch({
-        pendingReport: null,
-        lastCheckedAt: null,
+        pendingReport: clonedSnapshot.offline.pendingReport,
+        lastCheckedAt: clonedSnapshot.offline.lastCheckedAt,
       });
       this.$patch({
         version: clonedSnapshot.save.version,

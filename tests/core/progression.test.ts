@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { getStageConfig } from '@/data/monsters';
 import { evaluateStageTarget, getProgressionTargetSummary } from '@/core/combat/progression';
 import type { PlayerBuild } from '@/types/player';
 
@@ -67,6 +68,7 @@ describe('推层目标评估', () => {
     expect(summary.recommendedFarmStage).toBeLessThanOrEqual(8);
     expect(summary.recommendedFarm.canClear).toBe(true);
     expect(summary.recommendedFarm.farmScore).toBeGreaterThan(0);
+    expect(summary.recommendedFarm.dropValuePerSecond).toBeGreaterThanOrEqual(0);
   });
 
   it('下一层不可通关时建议挑战应回退到推荐挂机层', () => {
@@ -74,5 +76,73 @@ describe('推层目标评估', () => {
 
     expect(summary.suggestedChallengeStage).toBe(summary.recommendedFarmStage);
     expect(summary.nextUnlockStage).toBe(4);
+  });
+
+  it('Boss 层应具备更高战力要求、奖励和掉落价值', () => {
+    const beforeBoss = getStageConfig(9);
+    const boss = getStageConfig(10);
+    const bossEvaluation = evaluateStageTarget(createPlayer({ attack: 1000, hp: 5000, armor: 300 }), 10);
+
+    expect(boss.monsters[0]?.isBoss).toBe(true);
+    expect(boss.monsters[0]?.archetype).toBe('boss');
+    expect(boss.tags).toContain('boss');
+    expect(boss.recommendedPower).toBeGreaterThan(beforeBoss.recommendedPower);
+    expect(boss.monsters[0]!.hp).toBeGreaterThan(beforeBoss.monsters[0]!.hp);
+    expect(boss.monsters[0]!.gold).toBeGreaterThan(beforeBoss.monsters[0]!.gold);
+    expect(boss.monsters[0]!.dropChance).toBeGreaterThan(beforeBoss.monsters[0]!.dropChance ?? 0);
+    expect(bossEvaluation.dropValuePerSecond).toBeGreaterThan(0);
+    expect(bossEvaluation.recommendReason).toContain('金币');
+  });
+
+  it('推荐挂机评分应包含掉落期望价值', () => {
+    const evaluation = evaluateStageTarget(createPlayer({ attack: 1000, hp: 5000, armor: 300 }), 10);
+
+    expect(evaluation.farmScore).toBeCloseTo(
+      Math.round((evaluation.goldPerSecond + evaluation.expPerSecond + evaluation.dropValuePerSecond) * 100) / 100,
+    );
+    expect(evaluation.farmScore).toBeGreaterThan(evaluation.goldPerSecond + evaluation.expPerSecond);
+  });
+
+  it('普通层应轮换高血、高攻、均衡和奖励怪', () => {
+    const balanced = getStageConfig(1);
+    const highHp = getStageConfig(2);
+    const highAttack = getStageConfig(3);
+    const reward = getStageConfig(4);
+
+    expect(balanced.monsters[0]?.archetype).toBe('balanced');
+    expect(highHp.monsters[0]?.archetype).toBe('highHp');
+    expect(highAttack.monsters[0]?.archetype).toBe('highAttack');
+    expect(reward.monsters[0]?.archetype).toBe('reward');
+    expect(highHp.monsters[0]!.hp).toBeGreaterThan(balanced.monsters[0]!.hp);
+    expect(highAttack.monsters[0]!.attack).toBeGreaterThan(highHp.monsters[0]!.attack);
+    expect(reward.tags).toContain('gear');
+    expect(reward.monsters[0]!.dropValueMultiplier).toBeGreaterThan(balanced.monsters[0]!.dropValueMultiplier ?? 0);
+  });
+
+  it('第 10、20、30 层 Boss 应有不同奖励倾向', () => {
+    const goldBoss = getStageConfig(10);
+    const expBoss = getStageConfig(20);
+    const gearBoss = getStageConfig(30);
+
+    expect(goldBoss.rewardFocus).toBe('gold');
+    expect(goldBoss.tags).toEqual(['boss', 'gold']);
+    expect(expBoss.rewardFocus).toBe('exp');
+    expect(expBoss.tags).toEqual(['boss', 'exp']);
+    expect(gearBoss.rewardFocus).toBe('gear');
+    expect(gearBoss.tags).toEqual(['boss', 'gear']);
+    expect(goldBoss.monsters[0]!.gold).toBeGreaterThan(goldBoss.monsters[0]!.exp);
+    expect(expBoss.monsters[0]!.exp).toBeGreaterThan(expBoss.monsters[0]!.gold);
+    expect(gearBoss.monsters[0]!.dropValueMultiplier).toBeGreaterThan(goldBoss.monsters[0]!.dropValueMultiplier ?? 0);
+  });
+
+  it('关卡评估应包含标签、收益倾向和推荐原因', () => {
+    const gearEvaluation = evaluateStageTarget(createPlayer({ attack: 1000, hp: 5000, armor: 300 }), 30);
+    const highAttackEvaluation = evaluateStageTarget(createPlayer({ attack: 1000, hp: 5000, armor: 300 }), 3);
+
+    expect(gearEvaluation.tags).toContain('gear');
+    expect(gearEvaluation.rewardFocus).toBe('gear');
+    expect(gearEvaluation.recommendReason).toContain('装备');
+    expect(highAttackEvaluation.monsterArchetype).toBe('highAttack');
+    expect(highAttackEvaluation.recommendReason).toContain('生存');
   });
 });

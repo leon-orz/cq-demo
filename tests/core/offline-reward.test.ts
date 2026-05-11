@@ -116,11 +116,13 @@ describe('离线收益计算', () => {
     expect(report.filteredItems.length).toBeGreaterThan(0);
     expect(report.filteredItems.every((item) => !shouldKeepItem(item, rarePlusFilter))).toBe(true);
     expect(report.items.length).toBeLessThanOrEqual(1);
-    expect(report.rejectedItems).toBe(Math.max(0, fullCapacityReport.items.length - 1));
+    expect(report.rejectedItems).toBe(1);
     expect(report.rejectedItems).toBeLessThan(
       fullCapacityReport.items.length + fullCapacityReport.filteredItems.length - 1,
     );
     expect(report.wasInterrupted).toBe(report.rejectedItems > 0);
+    expect(report.monstersKilled).toBeLessThan(fullCapacityReport.monstersKilled);
+    expect(report.actualSeconds).toBeLessThan(fullCapacityReport.actualSeconds);
   });
 
   it('收益倍率应影响金币和经验', () => {

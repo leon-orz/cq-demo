@@ -38,6 +38,7 @@ function createPlayer(overrides: Partial<PlayerBuild['baseStats']>): PlayerBuild
 const monster: Monster = {
   id: 'test_monster',
   name: '测试怪物',
+  archetype: 'balanced',
   level: 1,
   hp: 100,
   attack: 5,

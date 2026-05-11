@@ -67,6 +67,10 @@ function createSnapshot(overrides: Partial<GameSaveSnapshot> = {}): GameSaveSnap
       currentStage: 2,
       highestUnlockedStage: 4,
     },
+    offline: {
+      pendingReport: null,
+      lastCheckedAt: null,
+    },
     save: {
       version: CURRENT_SAVE_SCHEMA_VERSION,
       lastActiveTime: 900,
@@ -115,6 +119,20 @@ describe('存档迁移', () => {
 
     expect(result.ok).toBe(true);
     expect(result.snapshot?.settings.itemScoreMode).toBe('balanced');
+  });
+
+  it('旧存档缺少离线报告时应补默认离线状态', () => {
+    const snapshot = createSnapshot();
+    const legacySnapshot = { ...snapshot } as Partial<GameSaveSnapshot>;
+    delete legacySnapshot.offline;
+
+    const result = migrateSaveSnapshot(legacySnapshot);
+
+    expect(result.ok).toBe(true);
+    expect(result.snapshot?.offline).toEqual({
+      pendingReport: null,
+      lastCheckedAt: null,
+    });
   });
 
   it('缺少版本号时应返回错误', () => {

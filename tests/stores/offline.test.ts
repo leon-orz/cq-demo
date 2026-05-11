@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { useFeedbackStore } from '@/stores/feedback';
+import { useCombatStore } from '@/stores/combat';
 import { useInventoryStore } from '@/stores/inventory';
 import { useOfflineStore } from '@/stores/offline';
 import { usePlayerStore } from '@/stores/player';
@@ -48,12 +49,29 @@ describe('离线收益状态', () => {
   it('离线时间足够时应生成报告', () => {
     const save = useSaveStore();
     const offline = useOfflineStore();
+    const combat = useCombatStore();
     save.markActive(0);
+    const expected = combat.progressionSummary.current;
 
     const report = offline.checkOfflineReward(3600 * 1000);
 
     expect(report).not.toBeNull();
     expect(offline.pendingReport).not.toBeNull();
+    expect(report?.playerPower).toBe(expected.playerPower);
+    expect(report?.rewardMultiplier).toBe(expected.rewardMultiplier);
+  });
+
+  it('已有待领取报告时离线检查不应覆盖报告', () => {
+    const save = useSaveStore();
+    const offline = useOfflineStore();
+    offline.pendingReport = createReport({ gold: 777 });
+    save.markActive(0);
+
+    const report = offline.checkOfflineReward(3600 * 1000);
+
+    expect(report?.gold).toBe(777);
+    expect(offline.pendingReport?.gold).toBe(777);
+    expect(save.lastActiveTime).toBe(3600 * 1000);
   });
 
   it('领取报告后应入账并清空报告', () => {

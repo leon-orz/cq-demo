@@ -4,6 +4,7 @@
     role="dialog"
     aria-modal="true"
     aria-label="装备对比"
+    @click.self="$emit('close')"
   >
     <section class="w-full max-w-3xl rounded border border-line bg-panel p-5 shadow-2xl shadow-black/60">
       <div class="flex items-start justify-between gap-4">
@@ -72,6 +73,7 @@
 </template>
 
 <script setup lang="ts">
+import { onBeforeUnmount, onMounted } from 'vue';
 import { useItemPresentation } from '@/composables/useItemPresentation';
 import { usePlayerStore } from '@/stores/player';
 import type { Item, StatKey } from '@/types/item';
@@ -81,7 +83,7 @@ const props = defineProps<{
   item: Item;
 }>();
 
-defineEmits<{
+const emit = defineEmits<{
   close: [];
   equip: [];
 }>();
@@ -91,6 +93,20 @@ const { compare, scoreModeLabel } = useItemPresentation(
   () => props.item,
   () => player.equipped,
 );
+
+function handleKeydown(event: KeyboardEvent) {
+  if (event.key === 'Escape') {
+    emit('close');
+  }
+}
+
+onMounted(() => {
+  window.addEventListener('keydown', handleKeydown);
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', handleKeydown);
+});
 
 function statLabel(stat: StatKey): string {
   const labels: Record<StatKey, string> = {

@@ -54,7 +54,7 @@ export function simulateCombat(
     };
   }
 
-  const shouldDrop = random.next() < 0.35;
+  const shouldDrop = random.next() < (monster.dropChance ?? 0.35);
 
   return {
     win: true,
@@ -93,6 +93,8 @@ export function simulateBatchCombat(
   let gold = 0;
   let exp = 0;
   const drops: BatchResult['drops'] = [];
+  const encounters: BatchResult['encounters'] = [];
+  let elapsedSeconds = 0;
 
   while (remainingSeconds > 0 && kills < 10000) {
     const result = simulateCombat(player, pickOne(stageConfig.monsters, random), remainingSeconds, random);
@@ -103,6 +105,14 @@ export function simulateBatchCombat(
     exp += result.exp;
     drops.push(...result.drops);
     remainingSeconds -= result.duration;
+    elapsedSeconds += result.duration;
+    encounters.push({
+      elapsedSeconds,
+      duration: result.duration,
+      gold: result.gold,
+      exp: result.exp,
+      drops: result.drops,
+    });
   }
 
   return {
@@ -110,6 +120,7 @@ export function simulateBatchCombat(
     gold,
     exp,
     drops,
+    encounters,
     actualSeconds: totalSeconds - remainingSeconds,
   };
 }

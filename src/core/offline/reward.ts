@@ -68,42 +68,50 @@ export function calculateOfflineReward(input: OfflineRewardInput): OfflineReport
   const filteredItems: Item[] = [];
   let rejectedItems = 0;
   let isInterrupted = false;
-  let processedDropsBeforeInterrupted = batch.drops.length;
+  let actualSeconds = 0;
+  let monstersKilled = 0;
+  let gold = 0;
+  let exp = 0;
   const shouldKeepDroppedItem =
     input.shouldKeepItem ?? (input.lootFilter ? (item: Item) => matchesLootFilter(item, input.lootFilter!) : null);
 
-  batch.drops.forEach((item, index) => {
-    if (shouldKeepDroppedItem && !shouldKeepDroppedItem(item)) {
-      if (!isInterrupted) {
+  for (const encounter of batch.encounters) {
+    actualSeconds = encounter.elapsedSeconds;
+    monstersKilled += 1;
+    gold += encounter.gold;
+    exp += encounter.exp;
+
+    for (const item of encounter.drops) {
+      if (shouldKeepDroppedItem && !shouldKeepDroppedItem(item)) {
         filteredItems.push(item);
+        continue;
       }
-      return;
+
+      if (acceptedItems.length < input.remainingSlots) {
+        acceptedItems.push(item);
+        continue;
+      }
+
+      rejectedItems += 1;
+      isInterrupted = true;
+      break;
     }
 
-    if (acceptedItems.length < input.remainingSlots) {
-      acceptedItems.push(item);
-      return;
+    if (isInterrupted) {
+      break;
     }
-
-    isInterrupted = true;
-    if (rejectedItems === 0) {
-      processedDropsBeforeInterrupted = index;
-    }
-    rejectedItems += 1;
-  });
+  }
 
   const wasInterrupted = rejectedItems > 0;
-  const progressRatio =
-    wasInterrupted && batch.drops.length > 0 ? processedDropsBeforeInterrupted / batch.drops.length : 1;
-  const reward = applyRewardDecay(batch.gold, batch.exp, input.playerPower, stageConfig.recommendedPower);
+  const reward = applyRewardDecay(gold, exp, input.playerPower, stageConfig.recommendedPower);
 
   return {
     totalSeconds: cappedSeconds,
-    actualSeconds: Math.floor(batch.actualSeconds * progressRatio),
+    actualSeconds: Math.floor(actualSeconds),
     cappedSeconds,
-    monstersKilled: Math.floor(batch.kills * progressRatio),
-    gold: Math.floor(reward.gold * progressRatio),
-    exp: Math.floor(reward.exp * progressRatio),
+    monstersKilled,
+    gold: reward.gold,
+    exp: reward.exp,
     items: acceptedItems,
     filteredItems,
     rejectedItems,

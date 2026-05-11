@@ -9,7 +9,7 @@
 当前核心闭环已经跑通：
 
 ```text
-战斗模拟 -> 掉落装备 -> 背包获得 -> 穿戴装备 -> 属性变强 -> 推进层数 -> 离线收益
+构筑评分 -> 装备选择 -> 推层目标 -> 战斗/挂机 -> 掉落反馈 -> 离线收益 -> 存档
 ```
 
 最新验证基线：
@@ -19,7 +19,7 @@
 - `npm run test:run`
 - `npm run build`
 
-当前测试结果为 16 个测试文件、56 条测试通过。
+当前测试结果为 26 个测试文件、102 条测试通过。
 
 ## 文档分组
 
@@ -31,6 +31,8 @@
 - `../plans/continuous-development-roadmap-2026-05-09.md`：从当前原型到正式可玩的连续开发路线图。
 - `../reports/project-status-2026-05-09.md`：项目完成度和真实产品状态评估。
 - `design-development-task-breakdown.md`：总任务拆解、里程碑、近期任务队列和主要风险。
+- `p0-stabilization-review-2026-05-11.md`：P0 稳定化复盘、新对话接续入口和 P1-P3 后续计划。
+- `p1-content-depth-development-plan-2026-05-11.md`：P1 内容厚度开发计划，覆盖怪物类型、Boss 阶段感、关卡标签和推荐说明。
 - `../backlog/remaining-work-2026-05-09.md`：当前剩余工作清单和后续排期入口。
 - `runnable-code-skeleton-plan.md`：最初可运行骨架计划，主要作为历史参考。
 - `dependency-upgrade-notes.md`：依赖升级和版本策略记录。
@@ -41,7 +43,8 @@
 - `daily-review-2026-05-08.md`：数据流边界整理、离线收益顺序优化和文档整理记录。
 - `daily-review-2026-05-09.md`：本地存档、导入导出 UI、文档整理和剩余工作清单记录。
 - `design-alignment-2026-05-09.md`：当前设计方向、核心落地系统和未来扩展的对齐记录。
-- `next-session-plan-2026-05-09.md`：下次临时接续计划，完成后应沉淀进复盘并删除。
+- `build-progression-feedback-review.md`：构筑评分、推层目标、掉落反馈和组件交互测试阶段复盘。
+- `p0-stabilization-review-2026-05-11.md`：离线报告持久化、口径统一、Boss 差异和新对话接续记录。
 
 ### 阶段计划与复盘
 

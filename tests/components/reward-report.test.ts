@@ -68,20 +68,33 @@ describe('RewardReport', () => {
     expect(wrapper.text()).toContain('离线装备 1');
   });
 
-  it('点击稍后查看和领取奖励应关闭弹窗', async () => {
+  it('点击稍后查看应折叠弹窗但保留待领取报告', async () => {
     const offline = useOfflineStore();
     offline.pendingReport = createReport();
 
-    const dismissWrapper = mount(RewardReport);
-    await dismissWrapper
+    const wrapper = mount(RewardReport);
+    await wrapper
       .findAll('button')
       .find((button) => button.text() === '稍后查看')!
       .trigger('click');
-    expect(offline.pendingReport).toBeNull();
 
+    expect(offline.pendingReport).not.toBeNull();
+    expect(useInventoryStore().gold).toBe(0);
+    expect(wrapper.find('[role="dialog"]').exists()).toBe(false);
+    expect(wrapper.text()).toContain('离线收益待领取');
+
+    await wrapper.find('button').trigger('click');
+
+    expect(wrapper.find('[role="dialog"]').exists()).toBe(true);
+    expect(wrapper.text()).toContain('领取奖励');
+  });
+
+  it('点击领取奖励应入账并清空报告', async () => {
+    const offline = useOfflineStore();
     offline.pendingReport = createReport();
-    const claimWrapper = mount(RewardReport);
-    await claimWrapper
+    const wrapper = mount(RewardReport);
+
+    await wrapper
       .findAll('button')
       .find((button) => button.text() === '领取奖励')!
       .trigger('click');

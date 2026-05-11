@@ -7,6 +7,15 @@
         <p class="text-sm text-slate-400">
           推荐战力 {{ target.current.recommendedPower }} · 已解锁 {{ combat.highestUnlockedStage }} 层
         </p>
+        <div class="mt-2 flex flex-wrap gap-1">
+          <span
+            v-for="tag in currentStageTags"
+            :key="tag"
+            class="rounded border border-line bg-slate-950 px-2 py-0.5 text-xs text-slate-300"
+          >
+            {{ tag }}
+          </span>
+        </div>
       </div>
       <div class="flex flex-wrap gap-2">
         <button
@@ -34,7 +43,7 @@
       <div class="rounded border border-line bg-ink p-3 text-sm">
         <p class="text-slate-500">推荐挂机</p>
         <p class="text-lg font-semibold text-emerald-300">第 {{ target.recommendedFarmStage }} 层</p>
-        <p class="text-xs text-slate-500">{{ target.recommendedFarm.rewardText }}</p>
+        <p class="text-xs text-slate-500">{{ target.recommendedFarm.recommendReason }}</p>
         <button
           class="mt-2 rounded border border-line px-2 py-1 text-xs text-slate-300 hover:border-slate-500"
           @click="combat.switchToRecommendedFarmStage()"
@@ -79,7 +88,7 @@
             "
             aria-label="怪物占位图"
           >
-            魔
+            {{ monsterSymbol }}
           </div>
           <h3 class="mt-4 text-lg font-semibold">{{ monster.name }}</h3>
           <p class="text-sm text-slate-500">
@@ -91,6 +100,7 @@
       <div class="rounded border border-line bg-ink p-4">
         <p class="text-sm text-slate-500">怪物</p>
         <h3 class="text-lg font-semibold">{{ monster.name }}</h3>
+        <p class="text-xs text-slate-500">{{ monsterArchetypeText }}</p>
         <div class="mt-3 grid grid-cols-3 gap-2 text-sm lg:grid-cols-1">
           <div>
             <p class="text-slate-500">生命</p>
@@ -146,11 +156,38 @@ import { computed } from 'vue';
 import BattleLog from '@/components/combat/BattleLog.vue';
 import { useCombatStore } from '@/stores/combat';
 import { useInventoryStore } from '@/stores/inventory';
+import type { MonsterArchetype, StageTag } from '@/types/combat';
 
 const combat = useCombatStore();
 const inventory = useInventoryStore();
 const monster = computed(() => combat.stageConfig.monsters[0]!);
 const target = computed(() => combat.progressionSummary);
+const stageTagTexts: Record<StageTag, string> = {
+  gold: '金币层',
+  exp: '经验层',
+  gear: '装备层',
+  boss: 'Boss 层',
+};
+const monsterArchetypeTexts: Record<MonsterArchetype, string> = {
+  balanced: '均衡怪',
+  highHp: '高血怪',
+  highAttack: '高攻怪',
+  reward: '奖励怪',
+  boss: '首领',
+};
+const monsterSymbols: Record<MonsterArchetype, string> = {
+  balanced: '衡',
+  highHp: '盾',
+  highAttack: '刃',
+  reward: '宝',
+  boss: '王',
+};
+const currentStageTags = computed(() => {
+  const tags = target.value.current.tags.map((tag) => stageTagTexts[tag]);
+  return tags.length > 0 ? tags : ['普通层'];
+});
+const monsterArchetypeText = computed(() => monsterArchetypeTexts[monster.value.archetype]);
+const monsterSymbol = computed(() => monsterSymbols[monster.value.archetype]);
 const killTimeText = computed(() => {
   const killTime = target.value.current.killTime;
   return Number.isFinite(killTime) ? `${killTime} 秒` : '无法击杀';
