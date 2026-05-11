@@ -1,10 +1,15 @@
 import { defineStore } from 'pinia';
-import { calculatePlayerPower } from '@/core/combat/reward';
+import {
+  createOfflineClaimFeedback,
+  createOfflineFilteredHighlightFeedback,
+  createOfflineHighlightItemFeedback,
+} from '@/core/feedback/rewardFeedback';
 import { getRejectedItemMaterialValue, shouldKeepItem } from '@/core/item/filter';
 import { calculateOfflineReward } from '@/core/offline/reward';
 import type { OfflineReport } from '@/types/offline';
 import { MIN_OFFLINE_SECONDS } from '@/utils/constants';
 import { useCombatStore } from './combat';
+import { useFeedbackStore } from './feedback';
 import { useInventoryStore } from './inventory';
 import { usePlayerStore } from './player';
 import { useSaveStore } from './save';
@@ -32,18 +37,19 @@ export const useOfflineStore = defineStore('offline', {
       const combat = useCombatStore();
       const save = useSaveStore();
       const settings = useSettingsStore();
-      const playerPower = calculatePlayerPower(player.dps, player.ehp);
+      const playerBuild = {
+        level: player.level,
+        mainAttribute: player.mainAttribute,
+        baseStats: player.totalStats,
+        equipped: player.equipped,
+        skillNodes: player.skillNodes,
+      };
+      const playerPower = combat.progressionSummary.current.playerPower;
 
       const report = calculateOfflineReward({
         lastActiveTime: save.lastActiveTime,
         now,
-        playerBuild: {
-          level: player.level,
-          mainAttribute: player.mainAttribute,
-          baseStats: player.totalStats,
-          equipped: player.equipped,
-          skillNodes: player.skillNodes,
-        },
+        playerBuild,
         stage: combat.currentStage,
         remainingSlots: inventory.remainingSlots,
         playerPower,
@@ -75,6 +81,7 @@ export const useOfflineStore = defineStore('offline', {
       const player = usePlayerStore();
       const inventory = useInventoryStore();
       const combat = useCombatStore();
+      const feedback = useFeedbackStore();
       const settings = useSettingsStore();
 
       inventory.addGold(report.gold);
@@ -91,6 +98,9 @@ export const useOfflineStore = defineStore('offline', {
       combat.playerPower = report.playerPower;
       combat.lastRewardMultiplier = report.rewardMultiplier;
       combat.addLog(`离线收益已领取：${report.gold} 金币、${report.exp} 经验、${report.items.length} 件装备。`);
+      feedback.pushFeedback(createOfflineClaimFeedback(report, player.equipped, settings.itemScoreMode));
+      feedback.pushFeedback(createOfflineHighlightItemFeedback(report, player.equipped, settings.itemScoreMode));
+      feedback.pushFeedback(createOfflineFilteredHighlightFeedback(report, player.equipped, settings.itemScoreMode));
 
       if (report.wasInterrupted) {
         combat.stoppedReason = '离线期间背包已满，收益提前停止。';

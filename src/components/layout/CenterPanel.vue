@@ -5,7 +5,7 @@
         <p class="text-xs uppercase text-slate-500">当前战斗</p>
         <h2 class="text-2xl font-semibold">{{ combat.stageConfig.name }}</h2>
         <p class="text-sm text-slate-400">
-          推荐战力 {{ combat.stageConfig.recommendedPower }} · 已解锁 {{ combat.highestUnlockedStage }} 层
+          推荐战力 {{ target.current.recommendedPower }} · 已解锁 {{ combat.highestUnlockedStage }} 层
         </p>
       </div>
       <div class="flex flex-wrap gap-2">
@@ -27,6 +27,40 @@
         >
           {{ combat.isAutoFighting ? '停止挂机' : '自动挂机' }}
         </button>
+      </div>
+    </div>
+
+    <div class="mt-4 grid gap-3 md:grid-cols-3">
+      <div class="rounded border border-line bg-ink p-3 text-sm">
+        <p class="text-slate-500">推荐挂机</p>
+        <p class="text-lg font-semibold text-emerald-300">第 {{ target.recommendedFarmStage }} 层</p>
+        <p class="text-xs text-slate-500">{{ target.recommendedFarm.rewardText }}</p>
+        <button
+          class="mt-2 rounded border border-line px-2 py-1 text-xs text-slate-300 hover:border-slate-500"
+          @click="combat.switchToRecommendedFarmStage()"
+        >
+          切换挂机层
+        </button>
+      </div>
+      <div class="rounded border border-line bg-ink p-3 text-sm">
+        <p class="text-slate-500">推层目标</p>
+        <p class="text-lg font-semibold text-amber-300">第 {{ target.suggestedChallengeStage }} 层</p>
+        <p class="text-xs text-slate-500">
+          {{ challengeText }}
+        </p>
+        <button
+          class="mt-2 rounded border border-line px-2 py-1 text-xs text-slate-300 hover:border-slate-500"
+          @click="combat.switchToHighestUnlockedStage()"
+        >
+          前往最高已解锁层
+        </button>
+      </div>
+      <div class="rounded border border-line bg-ink p-3 text-sm">
+        <p class="text-slate-500">当前评估</p>
+        <p class="text-lg font-semibold" :class="target.current.canClear ? 'text-emerald-300' : 'text-red-300'">
+          {{ target.current.canClear ? '可通关' : '有风险' }}
+        </p>
+        <p class="text-xs text-slate-500">{{ target.current.adviceText }}</p>
       </div>
     </div>
 
@@ -77,17 +111,22 @@
     <div class="mt-3 grid gap-3 md:grid-cols-3">
       <div class="rounded border border-line bg-ink p-3 text-sm">
         <p class="text-slate-500">当前战力</p>
-        <p class="text-lg font-semibold text-sky-300">{{ combat.playerPower || '待计算' }}</p>
+        <p class="text-lg font-semibold text-sky-300">{{ target.current.playerPower }}</p>
       </div>
       <div class="rounded border border-line bg-ink p-3 text-sm">
         <p class="text-slate-500">收益倍率</p>
-        <p class="text-lg font-semibold" :class="combat.isRewardDecayed ? 'text-amber-300' : 'text-emerald-300'">
-          {{ Math.round(combat.lastRewardMultiplier * 100) }}%
+        <p
+          class="text-lg font-semibold"
+          :class="target.current.rewardMultiplier < 1 ? 'text-amber-300' : 'text-emerald-300'"
+        >
+          {{ Math.round(target.current.rewardMultiplier * 100) }}%
         </p>
+        <p class="text-xs text-slate-500">{{ target.current.rewardText }}</p>
       </div>
       <div class="rounded border border-line bg-ink p-3 text-sm">
-        <p class="text-slate-500">挂机次数</p>
-        <p class="text-lg font-semibold text-slate-100">{{ combat.totalAutoRuns }}</p>
+        <p class="text-slate-500">击杀预估</p>
+        <p class="text-lg font-semibold text-slate-100">{{ killTimeText }}</p>
+        <p class="text-xs text-slate-500">挂机次数 {{ combat.totalAutoRuns }}</p>
       </div>
     </div>
 
@@ -111,4 +150,15 @@ import { useInventoryStore } from '@/stores/inventory';
 const combat = useCombatStore();
 const inventory = useInventoryStore();
 const monster = computed(() => combat.stageConfig.monsters[0]!);
+const target = computed(() => combat.progressionSummary);
+const killTimeText = computed(() => {
+  const killTime = target.value.current.killTime;
+  return Number.isFinite(killTime) ? `${killTime} 秒` : '无法击杀';
+});
+const challengeText = computed(() => {
+  if (target.value.suggestedChallengeStage === target.value.nextUnlockStage) {
+    return `下一目标第 ${target.value.nextUnlockStage} 层，当前预计可推进。`;
+  }
+  return `下一目标第 ${target.value.nextUnlockStage} 层，建议先回到推荐挂机层。`;
+});
 </script>

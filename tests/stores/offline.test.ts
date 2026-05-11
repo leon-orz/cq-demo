@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
+import { useFeedbackStore } from '@/stores/feedback';
 import { useInventoryStore } from '@/stores/inventory';
 import { useOfflineStore } from '@/stores/offline';
 import { usePlayerStore } from '@/stores/player';
@@ -93,6 +94,20 @@ describe('离线收益状态', () => {
     expect(inventory.lostDrops).toBe(0);
     expect(inventory.gold).toBe(120);
     expect(usePlayerStore().exp).toBeGreaterThanOrEqual(45);
+    expect(useFeedbackStore().events.some((event) => event.title === '离线收益已领取')).toBe(true);
+  });
+
+  it('领取离线高价值装备时应生成高价值反馈', () => {
+    const offline = useOfflineStore();
+    const feedback = useFeedbackStore();
+    offline.pendingReport = createReport({
+      items: [createItem(1, 'legendary')],
+    });
+
+    const claimed = offline.claimPendingReport();
+
+    expect(claimed).not.toBeNull();
+    expect(feedback.events.some((event) => event.title.includes('传说装备'))).toBe(true);
   });
 
   it('背包空间不足时应只丢失过滤后仍需入包的离线装备', () => {

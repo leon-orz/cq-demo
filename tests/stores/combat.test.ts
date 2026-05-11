@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { useCombatStore } from '@/stores/combat';
+import { useFeedbackStore } from '@/stores/feedback';
 import { useInventoryStore } from '@/stores/inventory';
 import { usePlayerStore } from '@/stores/player';
 import { INVENTORY_CAPACITY } from '@/utils/constants';
@@ -75,5 +76,84 @@ describe('战斗状态', () => {
     expect(result?.win).toBe(false);
     expect(combat.isAutoFighting).toBe(false);
     expect(combat.stoppedReason).toContain('战斗失败');
+  });
+
+  it('应提供推层目标摘要并支持切换推荐挂机层', () => {
+    const player = usePlayerStore();
+    const combat = useCombatStore();
+    player.$patch({
+      baseStats: {
+        str: 20,
+        dex: 10,
+        int: 10,
+        hp: 1500,
+        attack: 220,
+        attackSpeed: 1,
+        critChance: 5,
+        critDamage: 150,
+        armor: 100,
+      },
+    });
+    combat.$patch({ currentStage: 1, highestUnlockedStage: 8 });
+
+    const summary = combat.progressionSummary;
+
+    expect(summary.recommendedFarmStage).toBeGreaterThanOrEqual(1);
+    expect(summary.recommendedFarmStage).toBeLessThanOrEqual(8);
+
+    combat.switchToRecommendedFarmStage();
+
+    expect(combat.currentStage).toBe(summary.recommendedFarmStage);
+    expect(combat.logs.at(-1)?.message).toContain('推荐挂机层');
+  });
+
+  it('最高已解锁层挑战胜利后应解锁下一层', () => {
+    const player = usePlayerStore();
+    const combat = useCombatStore();
+    player.$patch({
+      baseStats: {
+        str: 20,
+        dex: 10,
+        int: 10,
+        hp: 2000,
+        attack: 500,
+        attackSpeed: 1,
+        critChance: 5,
+        critDamage: 150,
+        armor: 100,
+      },
+    });
+    combat.$patch({ currentStage: 1, highestUnlockedStage: 1 });
+
+    const result = combat.runSingleCombat();
+
+    expect(result?.win).toBe(true);
+    expect(combat.highestUnlockedStage).toBe(2);
+    expect(combat.logs.some((log) => log.message.includes('推层成功'))).toBe(true);
+    expect(useFeedbackStore().latestEvent?.title).toBe('推层成功');
+  });
+
+  it('非最高层挑战胜利不应重复解锁层数', () => {
+    const player = usePlayerStore();
+    const combat = useCombatStore();
+    player.$patch({
+      baseStats: {
+        str: 20,
+        dex: 10,
+        int: 10,
+        hp: 2000,
+        attack: 500,
+        attackSpeed: 1,
+        critChance: 5,
+        critDamage: 150,
+        armor: 100,
+      },
+    });
+    combat.$patch({ currentStage: 1, highestUnlockedStage: 3 });
+
+    const result = combat.runSingleCombat();
+
+    expect(result?.win).toBe(true);
+    expect(combat.highestUnlockedStage).toBe(3);
   });
 });
