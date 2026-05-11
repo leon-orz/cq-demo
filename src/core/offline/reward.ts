@@ -103,7 +103,13 @@ export function calculateOfflineReward(input: OfflineRewardInput): OfflineReport
   }
 
   const wasInterrupted = rejectedItems > 0;
-  const reward = applyRewardDecay(gold, exp, input.playerPower, stageConfig.recommendedPower);
+  const reward = applyRewardDecay(
+    gold,
+    exp,
+    input.playerPower,
+    stageConfig.recommendedPower,
+    input.playerBuild.baseStats,
+  );
 
   return {
     totalSeconds: cappedSeconds,

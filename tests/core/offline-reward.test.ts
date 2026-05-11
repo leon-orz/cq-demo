@@ -149,4 +149,28 @@ describe('离线收益计算', () => {
     expect(decayed.gold).toBeLessThan(full.gold);
     expect(decayed.exp).toBeLessThan(full.exp);
   });
+
+  it('goldFind 应提高离线金币收益但不影响经验', () => {
+    const base = calculateOfflineReward({
+      lastActiveTime: 0,
+      now: 600 * 1000,
+      playerBuild: createPlayer({ goldFind: 0 }),
+      stage: 1,
+      remainingSlots: 50,
+      playerPower: 2000,
+      random: new SeededRandom(4),
+    });
+    const boosted = calculateOfflineReward({
+      lastActiveTime: 0,
+      now: 600 * 1000,
+      playerBuild: createPlayer({ goldFind: 100 }),
+      stage: 1,
+      remainingSlots: 50,
+      playerPower: 2000,
+      random: new SeededRandom(4),
+    });
+
+    expect(boosted.gold).toBeGreaterThan(base.gold);
+    expect(boosted.exp).toBe(base.exp);
+  });
 });

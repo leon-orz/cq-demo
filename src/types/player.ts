@@ -2,6 +2,8 @@ import type { EquippedItems, StatBlock } from './item';
 
 export type MainAttribute = 'str' | 'dex' | 'int';
 
+export type SkillBranch = 'crit' | 'speed' | 'tank' | 'treasure';
+
 export interface PlayerBaseStats extends StatBlock {
   str: number;
   dex: number;
@@ -16,6 +18,8 @@ export interface PlayerBaseStats extends StatBlock {
 export interface SkillNode {
   id: string;
   name: string;
+  branch: SkillBranch;
+  description: string;
   active: boolean;
   stat: keyof StatBlock;
   value: number;

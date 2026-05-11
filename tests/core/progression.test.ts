@@ -145,4 +145,17 @@ describe('推层目标评估', () => {
     expect(highAttackEvaluation.monsterArchetype).toBe('highAttack');
     expect(highAttackEvaluation.recommendReason).toContain('生存');
   });
+
+  it('寻宝属性应影响推荐挂机金币和掉落价值评分', () => {
+    const base = evaluateStageTarget(createPlayer({ attack: 1000, hp: 5000, armor: 300 }), 4);
+    const treasure = evaluateStageTarget(
+      createPlayer({ attack: 1000, hp: 5000, armor: 300, goldFind: 100, magicFind: 100 }),
+      4,
+    );
+
+    expect(treasure.canClear).toBe(base.canClear);
+    expect(treasure.goldPerSecond).toBeGreaterThan(base.goldPerSecond);
+    expect(treasure.dropValuePerSecond).toBeGreaterThan(base.dropValuePerSecond);
+    expect(treasure.farmScore).toBeGreaterThan(base.farmScore);
+  });
 });

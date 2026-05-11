@@ -62,4 +62,26 @@ describe('战斗引擎', () => {
     expect(result.win).toBe(false);
     expect(result.drops).toHaveLength(0);
   });
+
+  it('magicFind 应提高有效掉落率', () => {
+    const lowDropMonster: Monster = {
+      ...monster,
+      dropChance: 0.2,
+    };
+    const noMagicFind = simulateCombat(
+      createPlayer({ attack: 500, hp: 1000, magicFind: 0 }),
+      lowDropMonster,
+      60,
+      new SeededRandom(5),
+    );
+    const withMagicFind = simulateCombat(
+      createPlayer({ attack: 500, hp: 1000, magicFind: 300 }),
+      lowDropMonster,
+      60,
+      new SeededRandom(5),
+    );
+
+    expect(noMagicFind.drops).toHaveLength(0);
+    expect(withMagicFind.drops).toHaveLength(1);
+  });
 });

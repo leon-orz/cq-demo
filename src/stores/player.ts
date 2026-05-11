@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia';
+import { createDefaultSkillNodes, mergeSkillNodes } from '@/data/skills';
 import { calculateDps, calculateEhp, calculateGearScore, calculateTotalStats } from '@/core/player/calculator';
 import type { EquipmentSlot, EquippedItems, Item } from '@/types/item';
 import type { MainAttribute, PlayerBaseStats, SkillNode } from '@/types/player';
@@ -48,7 +49,7 @@ export const usePlayerStore = defineStore('player', {
       armor: 4,
     },
     equipped: createEmptyEquipped(),
-    skillNodes: [],
+    skillNodes: createDefaultSkillNodes(),
   }),
 
   getters: {
@@ -67,9 +68,40 @@ export const usePlayerStore = defineStore('player', {
     gearScore(state): number {
       return calculateGearScore(state.equipped);
     },
+
+    skillPoints(state): number {
+      return Math.max(0, state.level - 1);
+    },
+
+    spentSkillPoints(state): number {
+      return state.skillNodes.filter((node) => node.active).length;
+    },
+
+    availableSkillPoints(): number {
+      return Math.max(0, this.skillPoints - this.spentSkillPoints);
+    },
   },
 
   actions: {
+    normalizeSkillNodes() {
+      this.skillNodes = mergeSkillNodes(this.skillNodes);
+    },
+
+    activateSkillNode(nodeId: string): boolean {
+      this.normalizeSkillNodes();
+      if (this.availableSkillPoints <= 0) return false;
+
+      const node = this.skillNodes.find((target) => target.id === nodeId);
+      if (!node || node.active) return false;
+
+      node.active = true;
+      return true;
+    },
+
+    resetSkillNodes() {
+      this.skillNodes = this.skillNodes.map((node) => ({ ...node, active: false }));
+    },
+
     gainExp(amount: number) {
       this.exp += amount;
       while (this.exp >= this.expToNext) {

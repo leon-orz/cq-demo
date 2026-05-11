@@ -26,6 +26,20 @@
     </div>
 
     <section class="mt-5">
+      <h2 class="mb-2 text-sm font-semibold text-slate-300">收益属性</h2>
+      <div class="grid grid-cols-2 gap-2 text-sm">
+        <div class="rounded border border-line bg-ink p-3">
+          <p class="text-slate-500">金币获取</p>
+          <p class="text-lg font-semibold text-amber-300">{{ player.totalStats.goldFind ?? 0 }}</p>
+        </div>
+        <div class="rounded border border-line bg-ink p-3">
+          <p class="text-slate-500">魔法发现</p>
+          <p class="text-lg font-semibold text-violet-300">{{ player.totalStats.magicFind ?? 0 }}</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="mt-5">
       <h2 class="mb-2 text-sm font-semibold text-slate-300">装备</h2>
       <div class="space-y-2">
         <button
@@ -39,10 +53,13 @@
         </button>
       </div>
     </section>
+
+    <SkillPanel />
   </aside>
 </template>
 
 <script setup lang="ts">
+import SkillPanel from '@/components/skilltree/SkillPanel.vue';
 import { usePlayerStore } from '@/stores/player';
 import type { EquipmentSlot } from '@/types/item';
 

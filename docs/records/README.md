@@ -12,6 +12,8 @@
 构筑评分 -> 装备选择 -> 推层目标 -> 战斗/挂机 -> 掉落反馈 -> 离线收益 -> 存档
 ```
 
+P1 内容厚度、P2 真实构筑入口和 P3 经济掉落调优第一版已完成。
+
 最新验证基线：
 
 - `npm run format:check`
@@ -19,7 +21,7 @@
 - `npm run test:run`
 - `npm run build`
 
-当前测试结果为 26 个测试文件、102 条测试通过。
+当前测试结果为 29 个测试文件、125 条测试通过。
 
 ## 文档分组
 
@@ -33,6 +35,13 @@
 - `design-development-task-breakdown.md`：总任务拆解、里程碑、近期任务队列和主要风险。
 - `p0-stabilization-review-2026-05-11.md`：P0 稳定化复盘、新对话接续入口和 P1-P3 后续计划。
 - `p1-content-depth-development-plan-2026-05-11.md`：P1 内容厚度开发计划，覆盖怪物类型、Boss 阶段感、关卡标签和推荐说明。
+- `p1-content-depth-review-2026-05-11.md`：P1 内容厚度阶段复盘，记录实际完成、验证结果、取舍和剩余风险。
+- `p2-build-entry-development-plan-2026-05-11.md`：P2 真实构筑入口开发计划，覆盖小型天赋节点、状态接入、基础 UI 和验证范围。
+- `p2-build-entry-review-2026-05-11.md`：P2 真实构筑入口阶段复盘，记录天赋节点、状态接入、收益属性展示和剩余风险。
+- `p3-economy-drop-tuning-development-plan-2026-05-11.md`：P3 经济和掉落调优开发计划，覆盖 `goldFind`、`magicFind`、统一收益口径和集中调参表。
+- `p3-economy-drop-tuning-review-2026-05-11.md`：P3 经济和掉落调优阶段复盘，记录收益口径统一、掉落率接入、验证结果和剩余风险。
+- `current-phase-summary-2026-05-11.md`：当前阶段总复盘，汇总 P0-P3 完成状态、体验回归、验证基线和下一步建议。
+- `next-session-handoff-2026-05-11.md`：下次接续记录，说明继续前应读取的文档、当前基线、未处理事项和下一步优先级。
 - `../backlog/remaining-work-2026-05-09.md`：当前剩余工作清单和后续排期入口。
 - `runnable-code-skeleton-plan.md`：最初可运行骨架计划，主要作为历史参考。
 - `dependency-upgrade-notes.md`：依赖升级和版本策略记录。
@@ -45,6 +54,10 @@
 - `design-alignment-2026-05-09.md`：当前设计方向、核心落地系统和未来扩展的对齐记录。
 - `build-progression-feedback-review.md`：构筑评分、推层目标、掉落反馈和组件交互测试阶段复盘。
 - `p0-stabilization-review-2026-05-11.md`：离线报告持久化、口径统一、Boss 差异和新对话接续记录。
+- `p1-content-depth-review-2026-05-11.md`：怪物类型、Boss 阶段感、关卡标签和推荐说明阶段复盘。
+- `p2-build-entry-review-2026-05-11.md`：小型天赋节点、构筑属性生效和收益属性展示阶段复盘。
+- `current-phase-summary-2026-05-11.md`：P0-P3 总体状态、体验回归和下一步建议。
+- `next-session-handoff-2026-05-11.md`：新对话或下次开发的接续入口。
 
 ### 阶段计划与复盘
 

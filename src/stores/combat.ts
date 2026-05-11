@@ -144,6 +144,7 @@ export const useCombatStore = defineStore('combat', {
         result.exp,
         currentTarget.playerPower,
         this.stageConfig.recommendedPower,
+        player.totalStats,
       );
 
       inventory.addGold(reward.gold);

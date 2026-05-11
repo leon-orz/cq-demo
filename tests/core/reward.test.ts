@@ -18,6 +18,16 @@ describe('收益衰减', () => {
     expect(reward.exp).toBe(40);
   });
 
+  it('goldFind 应在收益衰减前提高金币', () => {
+    const reward = applyRewardDecay(100, 80, 120, 100, { goldFind: 50 });
+    const decayed = applyRewardDecay(100, 80, 70, 100, { goldFind: 50 });
+
+    expect(reward.gold).toBe(150);
+    expect(reward.exp).toBe(80);
+    expect(decayed.gold).toBe(75);
+    expect(decayed.exp).toBe(40);
+  });
+
   it('玩家战力应综合输出和生存', () => {
     expect(calculatePlayerPower(20, 100)).toBeGreaterThan(calculatePlayerPower(10, 80));
   });

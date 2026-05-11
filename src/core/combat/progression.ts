@@ -2,6 +2,7 @@ import { getStageConfig } from '@/data/monsters';
 import { calculateDps, calculateEhp } from '@/core/player/calculator';
 import type { ProgressionTargetSummary, StageFailureReason, StageTargetEvaluation } from '@/types/combat';
 import type { PlayerBuild } from '@/types/player';
+import { getExpectedDropValue, getGoldWithFind } from './economy';
 import { calculateKillTime, calculateMonsterDps, calculateRewardMultiplier } from './formula';
 import { calculatePlayerPower } from './reward';
 
@@ -9,7 +10,6 @@ const MAX_STAGE_SCAN = 120;
 const COMBAT_TIME_LIMIT = 60;
 const FARM_REWARD_THRESHOLD = 0.8;
 const FARM_SCORE_TIE_RATIO = 0.95;
-const BASE_DROP_VALUE = 18;
 
 function roundTime(value: number): number {
   if (!Number.isFinite(value)) return Number.POSITIVE_INFINITY;
@@ -84,10 +84,12 @@ export function evaluateStageTarget(player: PlayerBuild, stage: number): StageTa
   const playerPower = calculatePlayerPower(Math.round(dps), Math.round(ehp));
   const rewardMultiplier = calculateRewardMultiplier(playerPower, stageConfig.recommendedPower);
   const effectiveKillTime = Math.max(1, Math.min(COMBAT_TIME_LIMIT, roundTime(killTime)));
-  const goldPerSecond = failureReason === 'none' ? (monster.gold * rewardMultiplier) / effectiveKillTime : 0;
+  const goldPerSecond =
+    failureReason === 'none'
+      ? (getGoldWithFind(monster.gold, player.baseStats) * rewardMultiplier) / effectiveKillTime
+      : 0;
   const expPerSecond = failureReason === 'none' ? (monster.exp * rewardMultiplier) / effectiveKillTime : 0;
-  const dropValue =
-    (monster.dropChance ?? 0.35) * (monster.dropValueMultiplier ?? 1) * BASE_DROP_VALUE * (1 + monster.level / 80);
+  const dropValue = getExpectedDropValue(monster, player.baseStats);
   const dropValuePerSecond = failureReason === 'none' ? (dropValue * rewardMultiplier) / effectiveKillTime : 0;
   const baseEvaluation = {
     stage: stageConfig.id,

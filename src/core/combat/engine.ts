@@ -5,6 +5,7 @@ import type { BatchResult, CombatResult, DamageEvent, Monster, StageConfig } fro
 import type { PlayerBuild } from '@/types/player';
 import type { RandomSource } from '@/core/utils/random';
 import { defaultRandom, pickOne } from '@/core/utils/random';
+import { getEffectiveDropChance } from './economy';
 import { calculateKillTime, calculateMonsterDps } from './formula';
 
 function generateDamageTimeline(
@@ -54,7 +55,7 @@ export function simulateCombat(
     };
   }
 
-  const shouldDrop = random.next() < (monster.dropChance ?? 0.35);
+  const shouldDrop = random.next() < getEffectiveDropChance(monster, player.baseStats);
 
   return {
     win: true,
