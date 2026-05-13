@@ -61,7 +61,7 @@ export function simulateCombat(
     win: true,
     duration: Math.round(timeToKill * 100) / 100,
     playerHpLost: Math.round(monsterDps * timeToKill),
-    drops: shouldDrop ? [generateItem(monster.level, undefined, random)] : [],
+    drops: shouldDrop ? [generateItem(monster.level, undefined, random, player.baseStats)] : [],
     gold: monster.gold,
     exp: monster.exp,
     damageEvents: generateDamageTimeline(

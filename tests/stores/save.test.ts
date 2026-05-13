@@ -90,6 +90,7 @@ describe('存档时间戳', () => {
     const offline = useOfflineStore();
 
     player.name = '快照角色';
+    player.trainingLevels.attack = 2;
     inventory.addItem(createItem(1));
     inventory.addGold(300);
     settings.setMinRarity('rare');
@@ -105,6 +106,7 @@ describe('存档时间戳', () => {
     expect(snapshot.schemaVersion).toBe(CURRENT_SAVE_SCHEMA_VERSION);
     expect(snapshot.savedAt).toBe(2000);
     expect(snapshot.player.name).toBe('快照角色');
+    expect(snapshot.player.trainingLevels.attack).toBe(2);
     expect(snapshot.inventory.items.map((item) => item.id)).toEqual(['save_item_1']);
     expect(snapshot.settings.lootFilter.minRarity).toBe('rare');
     expect(snapshot.inventoryView.rarities).toEqual(['rare']);
@@ -126,6 +128,7 @@ describe('存档时间戳', () => {
 
     const snapshot = save.createSnapshot(3000);
     snapshot.player.name = '恢复角色';
+    snapshot.player.trainingLevels.attack = 3;
     snapshot.inventory.items = [createItem(2)];
     snapshot.inventory.gold = 900;
     snapshot.settings.lootFilter.keepSlots = ['weapon'];
@@ -139,6 +142,7 @@ describe('存档时间戳', () => {
     save.restoreSnapshot(snapshot);
 
     expect(usePlayerStore().name).toBe('恢复角色');
+    expect(usePlayerStore().trainingLevels.attack).toBe(3);
     expect(useInventoryStore().items.map((item) => item.id)).toEqual(['save_item_2']);
     expect(useInventoryStore().gold).toBe(900);
     expect(useSettingsStore().lootFilter.keepSlots).toEqual(['weapon']);
@@ -185,6 +189,23 @@ describe('存档时间戳', () => {
     expect(result.ok).toBe(true);
     expect(useOfflineStore().pendingReport).toBeNull();
     expect(useOfflineStore().lastCheckedAt).toBeNull();
+  });
+
+  it('导入旧快照缺少训练字段时应提供默认训练等级', () => {
+    const save = useSaveStore();
+    const snapshot = save.createSnapshot(4200);
+    const legacySnapshot = JSON.parse(JSON.stringify(snapshot)) as Record<string, unknown>;
+    const player = legacySnapshot.player as Record<string, unknown>;
+    delete player.trainingLevels;
+
+    const result = save.importSave(JSON.stringify(legacySnapshot));
+
+    expect(result.ok).toBe(true);
+    expect(usePlayerStore().trainingLevels).toEqual({
+      attack: 0,
+      vitality: 0,
+      guard: 0,
+    });
   });
 
   it('导入非法 JSON 时应返回错误且不污染现有状态', () => {

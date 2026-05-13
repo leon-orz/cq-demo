@@ -54,12 +54,14 @@
       </div>
     </section>
 
+    <TrainingPanel />
     <SkillPanel />
   </aside>
 </template>
 
 <script setup lang="ts">
 import SkillPanel from '@/components/skilltree/SkillPanel.vue';
+import TrainingPanel from '@/components/training/TrainingPanel.vue';
 import { usePlayerStore } from '@/stores/player';
 import type { EquipmentSlot } from '@/types/item';
 

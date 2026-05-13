@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
+  createBossClearFeedback,
+  createBossFailedFeedback,
   createFilteredHighlightFeedback,
   createItemDropFeedback,
   isHighlightItem,
@@ -82,5 +84,17 @@ describe('奖励反馈规则', () => {
 
     expect(feedback?.level).toBe('warning');
     expect(feedback?.title).toContain('被过滤');
+  });
+
+  it('应生成 Boss 通关和失败反馈', () => {
+    const clearFeedback = createBossClearFeedback(10);
+    const failedFeedback = createBossFailedFeedback(20, '输出不足，无法在时限内击杀。');
+
+    expect(clearFeedback.kind).toBe('boss');
+    expect(clearFeedback.level).toBe('success');
+    expect(clearFeedback.message).toContain('第 10 层');
+    expect(failedFeedback.kind).toBe('boss');
+    expect(failedFeedback.level).toBe('warning');
+    expect(failedFeedback.message).toContain('输出不足');
   });
 });

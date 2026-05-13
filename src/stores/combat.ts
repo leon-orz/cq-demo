@@ -3,6 +3,8 @@ import { getStageConfig } from '@/data/monsters';
 import { simulateStageCombat } from '@/core/combat/engine';
 import { getProgressionTargetSummary } from '@/core/combat/progression';
 import {
+  createBossClearFeedback,
+  createBossFailedFeedback,
   createFilteredHighlightFeedback,
   createInventoryFullFeedback,
   createItemDropFeedback,
@@ -53,6 +55,7 @@ export const useCombatStore = defineStore('combat', {
           baseStats: player.totalStats,
           equipped: player.equipped,
           skillNodes: player.skillNodes,
+          trainingLevels: player.trainingLevels,
         },
         this.currentStage,
         this.highestUnlockedStage,
@@ -121,6 +124,7 @@ export const useCombatStore = defineStore('combat', {
           baseStats: player.totalStats,
           equipped: player.equipped,
           skillNodes: player.skillNodes,
+          trainingLevels: player.trainingLevels,
         },
         this.currentStage,
       );
@@ -131,6 +135,9 @@ export const useCombatStore = defineStore('combat', {
       if (!result.win) {
         const currentTarget = this.progressionSummary.current;
         this.addLog(`挑战 ${this.stageConfig.name} 失败：${currentTarget.failureText}`);
+        if (this.stageConfig.tags.includes('boss')) {
+          feedback.pushFeedback(createBossFailedFeedback(this.currentStage, currentTarget.failureText));
+        }
         if (source === 'auto') {
           this.isAutoFighting = false;
           this.stoppedReason = '战斗失败，自动挂机已暂停。';
@@ -179,9 +186,13 @@ export const useCombatStore = defineStore('combat', {
       }
 
       if (this.currentStage === this.highestUnlockedStage) {
+        const clearedStage = this.currentStage;
         this.highestUnlockedStage += 1;
         this.addLog(`推层成功，已解锁第 ${this.highestUnlockedStage} 层。`);
         feedback.pushFeedback(createStageUnlockFeedback(this.highestUnlockedStage));
+        if (this.stageConfig.tags.includes('boss')) {
+          feedback.pushFeedback(createBossClearFeedback(clearedStage));
+        }
       }
 
       return result;

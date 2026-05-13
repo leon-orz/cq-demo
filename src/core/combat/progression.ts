@@ -1,7 +1,15 @@
 import { getStageConfig } from '@/data/monsters';
 import { calculateDps, calculateEhp } from '@/core/player/calculator';
-import type { ProgressionTargetSummary, StageFailureReason, StageTargetEvaluation } from '@/types/combat';
+import type {
+  BossTargetSummary,
+  ProgressionTargetSummary,
+  RewardDominant,
+  RewardFocus,
+  StageFailureReason,
+  StageTargetEvaluation,
+} from '@/types/combat';
 import type { PlayerBuild } from '@/types/player';
+import type { StatBlock } from '@/types/item';
 import { getExpectedDropValue, getGoldWithFind } from './economy';
 import { calculateKillTime, calculateMonsterDps, calculateRewardMultiplier } from './formula';
 import { calculatePlayerPower } from './reward';
@@ -54,8 +62,17 @@ function getAdviceText(evaluation: Omit<StageTargetEvaluation, 'adviceText' | 'r
   return `预计 ${formatTime(evaluation.killTime)} 击杀，适合当前阶段。`;
 }
 
-function getRecommendReason(evaluation: Omit<StageTargetEvaluation, 'adviceText' | 'recommendReason'>): string {
+function getRecommendReason(
+  evaluation: Omit<StageTargetEvaluation, 'adviceText' | 'recommendReason'>,
+  stats: StatBlock,
+): string {
   if (!evaluation.canClear) return evaluation.failureText;
+
+  const hasGoldFind = (stats.goldFind ?? 0) > 0 && evaluation.goldPerSecond > 0;
+  const hasMagicFind = (stats.magicFind ?? 0) > 0 && evaluation.dropValuePerSecond > 0;
+  if (hasGoldFind && hasMagicFind) return '寻宝属性正在放大金币和掉落期望，适合稳定刷收益。';
+  if (hasGoldFind) return '金币获取加成正在放大本层收益，适合补充养成消耗。';
+  if (hasMagicFind) return '魔法发现正在放大掉落期望，适合刷装备替换。';
 
   const hasBossTag = evaluation.tags.includes('boss');
   if (evaluation.rewardFocus === 'gold') {
@@ -70,6 +87,19 @@ function getRecommendReason(evaluation: Omit<StageTargetEvaluation, 'adviceText'
   if (evaluation.monsterArchetype === 'highHp') return '高血怪更考验输出，当前击杀效率仍然稳定。';
   if (evaluation.monsterArchetype === 'highAttack') return '高攻怪更考验生存，当前承伤压力可控。';
   return '收益和击杀效率均衡，适合稳定挂机。';
+}
+
+function getRewardDominant(goldPerSecond: number, expPerSecond: number, dropValuePerSecond: number): RewardDominant {
+  const values: Array<{ focus: RewardFocus; value: number }> = [
+    { focus: 'gold', value: goldPerSecond },
+    { focus: 'exp', value: expPerSecond },
+    { focus: 'gear', value: dropValuePerSecond },
+  ];
+  const sorted = [...values].sort((first, second) => second.value - first.value);
+  const top = sorted[0]!;
+  const second = sorted[1]!;
+  if (top.value <= 0 || top.value < second.value * 1.2) return 'balanced';
+  return top.focus;
 }
 
 export function evaluateStageTarget(player: PlayerBuild, stage: number): StageTargetEvaluation {
@@ -91,6 +121,10 @@ export function evaluateStageTarget(player: PlayerBuild, stage: number): StageTa
   const expPerSecond = failureReason === 'none' ? (monster.exp * rewardMultiplier) / effectiveKillTime : 0;
   const dropValue = getExpectedDropValue(monster, player.baseStats);
   const dropValuePerSecond = failureReason === 'none' ? (dropValue * rewardMultiplier) / effectiveKillTime : 0;
+  const roundedGoldPerSecond = Math.round(goldPerSecond * 100) / 100;
+  const roundedExpPerSecond = Math.round(expPerSecond * 100) / 100;
+  const roundedDropValuePerSecond = Math.round(dropValuePerSecond * 100) / 100;
+  const farmScore = Math.round((goldPerSecond + expPerSecond + dropValuePerSecond) * 100) / 100;
   const baseEvaluation = {
     stage: stageConfig.id,
     stageName: stageConfig.name,
@@ -104,10 +138,17 @@ export function evaluateStageTarget(player: PlayerBuild, stage: number): StageTa
     canClear: failureReason === 'none',
     killTime: roundTime(killTime),
     survivalTime: roundTime(survivalTime),
-    goldPerSecond: Math.round(goldPerSecond * 100) / 100,
-    expPerSecond: Math.round(expPerSecond * 100) / 100,
-    dropValuePerSecond: Math.round(dropValuePerSecond * 100) / 100,
-    farmScore: Math.round((goldPerSecond + expPerSecond + dropValuePerSecond) * 100) / 100,
+    goldPerSecond: roundedGoldPerSecond,
+    expPerSecond: roundedExpPerSecond,
+    dropValuePerSecond: roundedDropValuePerSecond,
+    rewardBreakdown: {
+      goldPerSecond: roundedGoldPerSecond,
+      expPerSecond: roundedExpPerSecond,
+      dropValuePerSecond: roundedDropValuePerSecond,
+      totalScore: farmScore,
+      dominant: getRewardDominant(goldPerSecond, expPerSecond, dropValuePerSecond),
+    },
+    farmScore,
     failureReason,
     failureText: getFailureText(failureReason),
     rewardText: getRewardText(rewardMultiplier),
@@ -116,7 +157,37 @@ export function evaluateStageTarget(player: PlayerBuild, stage: number): StageTa
   return {
     ...baseEvaluation,
     adviceText: getAdviceText(baseEvaluation),
-    recommendReason: getRecommendReason(baseEvaluation),
+    recommendReason: getRecommendReason(baseEvaluation, player.baseStats),
+  };
+}
+
+function getNextBossStage(highestUnlockedStage: number): number {
+  return Math.min(MAX_STAGE_SCAN, Math.max(10, Math.ceil((highestUnlockedStage + 1) / 10) * 10));
+}
+
+function getBossReason(evaluation: StageTargetEvaluation): string {
+  if (!evaluation.canClear) return `${evaluation.failureText} 建议先在推荐层积累装备。`;
+  const focusTexts: Record<RewardFocus, string> = {
+    balanced: '奖励均衡',
+    gold: '金币奖励集中',
+    exp: '经验奖励集中',
+    gear: '装备掉落集中',
+  };
+  return `${focusTexts[evaluation.rewardFocus]}，当前预计可以挑战。`;
+}
+
+function getBossTarget(player: PlayerBuild, highestUnlockedStage: number): BossTargetSummary {
+  const bossStage = getNextBossStage(highestUnlockedStage);
+  const evaluation = evaluateStageTarget(player, bossStage);
+  return {
+    stage: bossStage,
+    rewardFocus: evaluation.rewardFocus,
+    canClear: evaluation.canClear,
+    recommendedPower: evaluation.recommendedPower,
+    playerPower: evaluation.playerPower,
+    powerGap: Math.max(0, evaluation.recommendedPower - evaluation.playerPower),
+    stagesAway: Math.max(0, bossStage - highestUnlockedStage),
+    reason: getBossReason(evaluation),
   };
 }
 
@@ -155,5 +226,6 @@ export function getProgressionTargetSummary(
     suggestedChallengeStage: suggestedChallenge.stage,
     suggestedChallenge,
     nextUnlockStage,
+    bossTarget: getBossTarget(player, safeHighestStage),
   };
 }

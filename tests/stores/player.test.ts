@@ -1,6 +1,7 @@
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { usePlayerStore } from '@/stores/player';
+import { useInventoryStore } from '@/stores/inventory';
 
 describe('角色天赋状态', () => {
   beforeEach(() => {
@@ -73,5 +74,49 @@ describe('角色天赋状态', () => {
     expect(player.skillNodes.length).toBeGreaterThan(1);
     expect(player.skillNodes.find((node) => node.id === 'crit_chance_1')?.active).toBe(true);
     expect(player.skillNodes.find((node) => node.id === 'crit_chance_1')?.value).toBe(3);
+  });
+
+  it('金币足够时应能升级训练并影响总属性', () => {
+    const player = usePlayerStore();
+    const inventory = useInventoryStore();
+    inventory.gold = 500;
+
+    const ok = player.upgradeTraining('attack');
+
+    expect(ok).toBe(true);
+    expect(inventory.gold).toBe(420);
+    expect(player.trainingLevels.attack).toBe(1);
+    expect(player.totalStats.attack).toBe(14);
+    expect(player.totalTrainingLevel).toBe(1);
+  });
+
+  it('金币不足或满级时训练升级应失败', () => {
+    const player = usePlayerStore();
+    const inventory = useInventoryStore();
+
+    expect(player.upgradeTraining('vitality')).toBe(false);
+    expect(player.trainingLevels.vitality).toBe(0);
+
+    inventory.gold = 999999;
+    player.trainingLevels.vitality = 20;
+    expect(player.upgradeTraining('vitality')).toBe(false);
+    expect(player.trainingLevels.vitality).toBe(20);
+  });
+
+  it('应能归一化旧存档中的训练等级', () => {
+    const player = usePlayerStore();
+    player.$patch({
+      trainingLevels: {
+        attack: 2,
+        vitality: -3,
+        guard: 99,
+      },
+    });
+
+    player.normalizeTraining();
+
+    expect(player.trainingLevels.attack).toBe(2);
+    expect(player.trainingLevels.vitality).toBe(0);
+    expect(player.trainingLevels.guard).toBe(20);
   });
 });

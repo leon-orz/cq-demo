@@ -31,6 +31,7 @@ function createPlayer(overrides: Partial<PlayerBuild['baseStats']> = {}): Player
       necklace: null,
     },
     skillNodes: [],
+    trainingLevels: { attack: 0, vitality: 0, guard: 0 },
   };
 }
 
@@ -100,6 +101,8 @@ describe('推层目标评估', () => {
     expect(evaluation.farmScore).toBeCloseTo(
       Math.round((evaluation.goldPerSecond + evaluation.expPerSecond + evaluation.dropValuePerSecond) * 100) / 100,
     );
+    expect(evaluation.rewardBreakdown.totalScore).toBe(evaluation.farmScore);
+    expect(evaluation.rewardBreakdown.dominant).toBe('gold');
     expect(evaluation.farmScore).toBeGreaterThan(evaluation.goldPerSecond + evaluation.expPerSecond);
   });
 
@@ -135,6 +138,15 @@ describe('推层目标评估', () => {
     expect(gearBoss.monsters[0]!.dropValueMultiplier).toBeGreaterThan(goldBoss.monsters[0]!.dropValueMultiplier ?? 0);
   });
 
+  it('推层摘要应包含下一个 Boss 目标', () => {
+    const summary = getProgressionTargetSummary(createPlayer({ attack: 1000, hp: 5000, armor: 300 }), 1, 8);
+
+    expect(summary.bossTarget.stage).toBe(10);
+    expect(summary.bossTarget.rewardFocus).toBe('gold');
+    expect(summary.bossTarget.stagesAway).toBe(2);
+    expect(summary.bossTarget.reason).toContain('金币');
+  });
+
   it('关卡评估应包含标签、收益倾向和推荐原因', () => {
     const gearEvaluation = evaluateStageTarget(createPlayer({ attack: 1000, hp: 5000, armor: 300 }), 30);
     const highAttackEvaluation = evaluateStageTarget(createPlayer({ attack: 1000, hp: 5000, armor: 300 }), 3);
@@ -157,5 +169,6 @@ describe('推层目标评估', () => {
     expect(treasure.goldPerSecond).toBeGreaterThan(base.goldPerSecond);
     expect(treasure.dropValuePerSecond).toBeGreaterThan(base.dropValuePerSecond);
     expect(treasure.farmScore).toBeGreaterThan(base.farmScore);
+    expect(treasure.recommendReason).toContain('寻宝属性');
   });
 });

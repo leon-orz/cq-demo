@@ -4,6 +4,9 @@
       <p class="text-xs uppercase text-slate-500">背包</p>
       <h2 class="text-xl font-semibold">{{ usedSlots }}/{{ capacity }}</h2>
       <p class="text-xs text-slate-500">剩余 {{ remainingSlots }} 格</p>
+      <p v-if="pressureLevel !== 'normal'" class="mt-1 text-xs text-amber-300">
+        {{ pressureText }} 建议清理 {{ suggestedCleanupCount }} 件。
+      </p>
     </div>
     <div class="text-right">
       <button
@@ -19,11 +22,15 @@
 
 <script setup lang="ts">
 import type { DecomposePreview } from '@/stores/inventory';
+import type { InventoryPressureLevel } from '@/stores/inventory';
 
 defineProps<{
   usedSlots: number;
   capacity: number;
   remainingSlots: number;
+  pressureLevel: InventoryPressureLevel;
+  pressureText: string;
+  suggestedCleanupCount: number;
   preview: DecomposePreview;
 }>();
 

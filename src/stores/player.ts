@@ -1,8 +1,16 @@
 import { defineStore } from 'pinia';
 import { createDefaultSkillNodes, mergeSkillNodes } from '@/data/skills';
+import { trainingDefinitions } from '@/data/training';
 import { calculateDps, calculateEhp, calculateGearScore, calculateTotalStats } from '@/core/player/calculator';
+import {
+  calculateTrainingBonuses,
+  findTrainingDefinition,
+  getTrainingUpgradePreview,
+  normalizeTrainingLevels,
+  upgradeTrainingLevel,
+} from '@/core/player/training';
 import type { EquipmentSlot, EquippedItems, Item } from '@/types/item';
-import type { MainAttribute, PlayerBaseStats, SkillNode } from '@/types/player';
+import type { MainAttribute, PlayerBaseStats, SkillNode, TrainingId, TrainingLevels } from '@/types/player';
 import { useInventoryStore } from './inventory';
 
 interface PlayerState {
@@ -14,6 +22,7 @@ interface PlayerState {
   baseStats: PlayerBaseStats;
   equipped: EquippedItems;
   skillNodes: SkillNode[];
+  trainingLevels: TrainingLevels;
 }
 
 function createEmptyEquipped(): EquippedItems {
@@ -50,11 +59,17 @@ export const usePlayerStore = defineStore('player', {
     },
     equipped: createEmptyEquipped(),
     skillNodes: createDefaultSkillNodes(),
+    trainingLevels: normalizeTrainingLevels(),
   }),
 
   getters: {
     totalStats(state): PlayerBaseStats {
-      return calculateTotalStats(state.baseStats, state.equipped, state.skillNodes);
+      return calculateTotalStats(
+        state.baseStats,
+        state.equipped,
+        state.skillNodes,
+        calculateTrainingBonuses(state.trainingLevels),
+      );
     },
 
     dps(): number {
@@ -80,6 +95,18 @@ export const usePlayerStore = defineStore('player', {
     availableSkillPoints(): number {
       return Math.max(0, this.skillPoints - this.spentSkillPoints);
     },
+
+    trainingPreviews(state) {
+      const inventory = useInventoryStore();
+      return trainingDefinitions.map((definition) =>
+        getTrainingUpgradePreview(definition, normalizeTrainingLevels(state.trainingLevels), inventory.gold),
+      );
+    },
+
+    totalTrainingLevel(state): number {
+      const levels = normalizeTrainingLevels(state.trainingLevels);
+      return Object.values(levels).reduce((sum, level) => sum + level, 0);
+    },
   },
 
   actions: {
@@ -100,6 +127,24 @@ export const usePlayerStore = defineStore('player', {
 
     resetSkillNodes() {
       this.skillNodes = this.skillNodes.map((node) => ({ ...node, active: false }));
+    },
+
+    normalizeTraining() {
+      this.trainingLevels = normalizeTrainingLevels(this.trainingLevels);
+    },
+
+    upgradeTraining(trainingId: TrainingId): boolean {
+      this.normalizeTraining();
+      const definition = findTrainingDefinition(trainingId);
+      if (!definition) return false;
+
+      const inventory = useInventoryStore();
+      const preview = getTrainingUpgradePreview(definition, this.trainingLevels, inventory.gold);
+      if (!preview.canAfford) return false;
+
+      inventory.gold -= preview.cost;
+      this.trainingLevels = upgradeTrainingLevel(this.trainingLevels, trainingId);
+      return true;
     },
 
     gainExp(amount: number) {

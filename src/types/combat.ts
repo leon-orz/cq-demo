@@ -6,6 +6,8 @@ export type StageTag = 'gold' | 'exp' | 'gear' | 'boss';
 
 export type RewardFocus = 'balanced' | 'gold' | 'exp' | 'gear';
 
+export type RewardDominant = RewardFocus;
+
 export interface Monster {
   id: string;
   name: string;
@@ -81,12 +83,30 @@ export interface StageTargetEvaluation {
   goldPerSecond: number;
   expPerSecond: number;
   dropValuePerSecond: number;
+  rewardBreakdown: {
+    goldPerSecond: number;
+    expPerSecond: number;
+    dropValuePerSecond: number;
+    totalScore: number;
+    dominant: RewardDominant;
+  };
   farmScore: number;
   failureReason: StageFailureReason;
   failureText: string;
   rewardText: string;
   adviceText: string;
   recommendReason: string;
+}
+
+export interface BossTargetSummary {
+  stage: number;
+  rewardFocus: RewardFocus;
+  canClear: boolean;
+  recommendedPower: number;
+  playerPower: number;
+  powerGap: number;
+  stagesAway: number;
+  reason: string;
 }
 
 export interface ProgressionTargetSummary {
@@ -96,9 +116,10 @@ export interface ProgressionTargetSummary {
   suggestedChallengeStage: number;
   suggestedChallenge: StageTargetEvaluation;
   nextUnlockStage: number;
+  bossTarget: BossTargetSummary;
 }
 
-export type RewardFeedbackKind = 'item' | 'stage' | 'offline' | 'inventory';
+export type RewardFeedbackKind = 'item' | 'stage' | 'offline' | 'inventory' | 'boss';
 
 export type RewardFeedbackLevel = 'info' | 'success' | 'warning' | 'legendary';
 

@@ -5,6 +5,7 @@ import {
   getGoldFindMultiplier,
   getGoldWithFind,
   getMagicFindDropChanceMultiplier,
+  getMagicFindRarityMultipliers,
 } from '@/core/combat/economy';
 import type { Monster } from '@/types/combat';
 
@@ -39,6 +40,12 @@ describe('经济调参工具', () => {
     expect(getMagicFindDropChanceMultiplier({ magicFind: 100 })).toBe(1.5);
     expect(getMagicFindDropChanceMultiplier({ magicFind: 999 })).toBe(2.5);
     expect(getEffectiveDropChance({ ...monster, dropChance: 0.5 }, { magicFind: 999 })).toBe(0.95);
+  });
+
+  it('magicFind 应小幅提高稀有和传说品质权重并封顶', () => {
+    expect(getMagicFindRarityMultipliers({ magicFind: 0 })).toEqual({ rare: 1, legendary: 1 });
+    expect(getMagicFindRarityMultipliers({ magicFind: 100 })).toEqual({ rare: 1.2, legendary: 1.1 });
+    expect(getMagicFindRarityMultipliers({ magicFind: 999 })).toEqual({ rare: 1.6, legendary: 1.3 });
   });
 
   it('期望掉落价值应随 magicFind 增加', () => {

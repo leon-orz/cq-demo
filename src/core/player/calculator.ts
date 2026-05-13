@@ -9,8 +9,13 @@ export function calculateTotalStats(
   baseStats: PlayerBaseStats,
   equipped: EquippedItems,
   skillNodes: SkillNode[] = [],
+  trainingBonuses: StatBlock = {},
 ): PlayerBaseStats {
   const stats: StatBlock = { ...baseStats };
+
+  Object.entries(trainingBonuses).forEach(([key, value]) => {
+    addStat(stats, key as keyof StatBlock, value ?? 0);
+  });
 
   Object.values(equipped).forEach((item) => {
     if (!item) return;

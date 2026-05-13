@@ -18,7 +18,7 @@
 
 - 第一版让 `goldFind` 影响金币收益。
 - 第一版让 `magicFind` 优先影响掉落率和推荐掉落价值。
-- 暂不让 `magicFind` 直接改高品质权重，避免同时扰动掉落率和品质分布。
+- P3-2 小步收口已让 `magicFind` 小幅影响稀有和传说品质权重，并设置封顶，避免同时大幅扰动掉落率和品质分布。
 - 在线战斗、离线收益、推荐挂机评分必须共享同一套收益口径。
 - 不在本阶段做拍卖、商店、强化消耗、长期经济回收或服务端防作弊。
 - 不改变存档结构。
@@ -62,11 +62,17 @@ effectiveDropChance = min(baseDropChance * dropChanceMultiplier, 0.95);
 - `magicFind = 100`：掉落率提高 50%。
 - `magicFind = 300`：掉落率提高 150%，但总掉落率最高 95%。
 
-暂不改品质权重的理由：
+P3-2 已追加小幅品质权重加成：
+
+- 稀有权重随 `magicFind` 提升，最高 1.6 倍。
+- 传说权重随 `magicFind` 提升，最高 1.6 倍。
+- 推荐掉落价值同步纳入品质期望，避免在线、离线和推荐评分口径漂移。
+
+第一版不直接改品质权重的理由：
 
 - 当前 `rollRarity()` 已按怪物等级提供基础品质曲线。
 - 同时改掉率和品质会让推荐挂机、离线截断、拾取过滤和高价值反馈一起变化，第一版不利于定位问题。
-- P3 收口后可以再做 P3-2：让 `magicFind` 小幅影响稀有和传说权重。
+- 因此 P3-2 只做小幅加成和测试覆盖，不引入更复杂的品质曲线。
 
 ## 集中调参表
 
@@ -82,12 +88,15 @@ export const economyTuning = {
   goldFindMultiplierPerPoint: 0.01,
   maxMagicFind: 300,
   magicFindDropChanceMultiplierPerPoint: 0.005,
+  magicFindRareChanceMultiplierPerPoint: 0.002,
+  magicFindLegendaryChanceMultiplierPerPoint: 0.001,
+  maxMagicFindRarityMultiplier: 1.6,
   maxDropChance: 0.95,
   baseDropValue: 18,
 };
 ```
 
-后续再逐步迁入怪物成长、金币经验曲线和品质权重。
+后续再逐步迁入怪物成长、金币经验曲线。
 
 ## 任务拆解
 
@@ -104,9 +113,9 @@ export const economyTuning = {
 ### P3-2：在线战斗收益接入
 
 - [x] `simulateCombat()` 使用有效掉落率，而不是直接读取 `monster.dropChance`。
-- [x] 掉落生成仍先保持原有品质权重。
+- [x] 掉落生成已接收玩家属性，`magicFind` 小幅影响稀有和传说品质权重。
 - [x] 在线金币结算应用 `goldFind`，并继续保留战力收益衰减。
-- [x] 补测试验证 `goldFind` 提高在线金币，`magicFind` 提高掉落概率或可控随机结果。
+- [x] 补测试验证 `goldFind` 提高在线金币，`magicFind` 提高掉落概率、品质权重或可控随机结果。
 
 ### P3-3：离线收益接入
 
@@ -154,6 +163,7 @@ export const economyTuning = {
 - `goldFind` 能提升在线战斗金币收益。
 - `goldFind` 能提升离线收益金币。
 - `magicFind` 能提升在线和离线掉落率，且掉落率有上限。
+- `magicFind` 能小幅提升稀有和传说品质权重，且品质权重有上限。
 - 推荐挂机评分使用包含 `goldFind` 和 `magicFind` 的同一套期望收益口径。
 - 经济和掉落关键参数集中在 `src/data/economy.ts`。
 - `core` 仍保持纯逻辑，不依赖 Vue、Pinia、DOM。
@@ -161,7 +171,7 @@ export const economyTuning = {
 
 ## 风险与取舍
 
-- `magicFind` 第一版只影响掉落率，不影响品质，寻宝流深度有限，但更容易验证和调参。
+- `magicFind` 对品质权重只做小幅加成，寻宝流高级追求更清晰，但仍需要继续观察实际产出分布。
 - `goldFind` 提升金币后，金币消耗系统还不完整，短期内金币可能继续堆积。
 - 提高掉落率会加大背包压力，拾取过滤和自动转化的现有规则需要继续承担整理压力。
 - 推荐挂机评分加入寻宝属性后，装备层和奖励怪可能更容易被推荐，需要在测试中观察是否长期垄断。

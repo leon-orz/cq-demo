@@ -109,4 +109,18 @@ describe('角色计算器', () => {
 
     expect(stats.magicFind).toBe(12);
   });
+
+  it('训练加成应进入总属性并影响 DPS 和 EHP', () => {
+    const stats = calculateTotalStats(baseStats, emptyEquipped, [], {
+      attack: 10,
+      hp: 80,
+      armor: 30,
+    });
+
+    expect(stats.attack).toBe(30);
+    expect(stats.hp).toBe(180);
+    expect(stats.armor).toBe(30);
+    expect(calculateDps(stats, 'str')).toBeGreaterThan(calculateDps(baseStats, 'str'));
+    expect(calculateEhp(stats, 10)).toBeGreaterThan(calculateEhp(baseStats, 10));
+  });
 });

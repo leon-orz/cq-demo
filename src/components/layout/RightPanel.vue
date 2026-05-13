@@ -4,6 +4,9 @@
       :capacity="inventory.capacity"
       :preview="decomposePreview"
       :remaining-slots="inventory.remainingSlots"
+      :pressure-level="inventory.pressureLevel"
+      :pressure-text="inventory.pressureText"
+      :suggested-cleanup-count="inventory.suggestedCleanupCount"
       :used-slots="inventory.usedSlots"
       @request-decompose="showDecomposeConfirm = true"
     />

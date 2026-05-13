@@ -44,6 +44,21 @@
         <p class="text-slate-500">推荐挂机</p>
         <p class="text-lg font-semibold text-emerald-300">第 {{ target.recommendedFarmStage }} 层</p>
         <p class="text-xs text-slate-500">{{ target.recommendedFarm.recommendReason }}</p>
+        <div class="mt-2 grid grid-cols-3 gap-1 text-xs">
+          <div>
+            <p class="text-slate-500">金币/秒</p>
+            <p class="text-amber-200">{{ target.recommendedFarm.rewardBreakdown.goldPerSecond }}</p>
+          </div>
+          <div>
+            <p class="text-slate-500">经验/秒</p>
+            <p class="text-sky-200">{{ target.recommendedFarm.rewardBreakdown.expPerSecond }}</p>
+          </div>
+          <div>
+            <p class="text-slate-500">掉落/秒</p>
+            <p class="text-violet-200">{{ target.recommendedFarm.rewardBreakdown.dropValuePerSecond }}</p>
+          </div>
+        </div>
+        <p class="mt-1 text-xs text-slate-500">主收益：{{ rewardDominantText }}</p>
         <button
           class="mt-2 rounded border border-line px-2 py-1 text-xs text-slate-300 hover:border-slate-500"
           @click="combat.switchToRecommendedFarmStage()"
@@ -65,11 +80,11 @@
         </button>
       </div>
       <div class="rounded border border-line bg-ink p-3 text-sm">
-        <p class="text-slate-500">当前评估</p>
+        <p class="text-slate-500">Boss 目标</p>
         <p class="text-lg font-semibold" :class="target.current.canClear ? 'text-emerald-300' : 'text-red-300'">
-          {{ target.current.canClear ? '可通关' : '有风险' }}
+          第 {{ target.bossTarget.stage }} 层
         </p>
-        <p class="text-xs text-slate-500">{{ target.current.adviceText }}</p>
+        <p class="text-xs text-slate-500">{{ bossTargetText }}</p>
       </div>
     </div>
 
@@ -141,10 +156,20 @@
     </div>
 
     <div
-      v-if="inventory.isFull || combat.stoppedReason"
+      v-if="inventory.pressureLevel !== 'normal' || combat.stoppedReason"
       class="mt-3 rounded border border-amber-500/50 bg-amber-500/10 px-3 py-2 text-sm text-amber-200"
     >
-      {{ inventory.isFull ? '背包已满，请先分解或穿戴装备。' : combat.stoppedReason }}
+      {{ combat.stoppedReason ?? inventory.pressureText }}
+    </div>
+
+    <div class="mt-3 rounded border border-line bg-ink p-3 text-sm">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <p class="text-slate-500">当前评估</p>
+          <p class="text-slate-300">{{ target.current.adviceText }}</p>
+        </div>
+        <p class="text-xs text-slate-500">收益评分 {{ target.current.rewardBreakdown.totalScore }}</p>
+      </div>
     </div>
 
     <BattleLog class="mt-5" :logs="combat.logs" />
@@ -156,7 +181,7 @@ import { computed } from 'vue';
 import BattleLog from '@/components/combat/BattleLog.vue';
 import { useCombatStore } from '@/stores/combat';
 import { useInventoryStore } from '@/stores/inventory';
-import type { MonsterArchetype, StageTag } from '@/types/combat';
+import type { MonsterArchetype, RewardDominant, RewardFocus, StageTag } from '@/types/combat';
 
 const combat = useCombatStore();
 const inventory = useInventoryStore();
@@ -182,6 +207,18 @@ const monsterSymbols: Record<MonsterArchetype, string> = {
   reward: '宝',
   boss: '王',
 };
+const rewardDominantTexts: Record<RewardDominant, string> = {
+  balanced: '均衡',
+  gold: '金币',
+  exp: '经验',
+  gear: '装备',
+};
+const rewardFocusTexts: Record<RewardFocus, string> = {
+  balanced: '均衡',
+  gold: '金币',
+  exp: '经验',
+  gear: '装备',
+};
 const currentStageTags = computed(() => {
   const tags = target.value.current.tags.map((tag) => stageTagTexts[tag]);
   return tags.length > 0 ? tags : ['普通层'];
@@ -197,5 +234,12 @@ const challengeText = computed(() => {
     return `下一目标第 ${target.value.nextUnlockStage} 层，当前预计可推进。`;
   }
   return `下一目标第 ${target.value.nextUnlockStage} 层，建议先回到推荐挂机层。`;
+});
+const rewardDominantText = computed(() => rewardDominantTexts[target.value.recommendedFarm.rewardBreakdown.dominant]);
+const bossTargetText = computed(() => {
+  const boss = target.value.bossTarget;
+  const distanceText = boss.stagesAway > 0 ? `距离 ${boss.stagesAway} 层` : '已到达 Boss 区间';
+  const gapText = boss.powerGap > 0 ? `战力差 ${boss.powerGap}` : '战力已达标';
+  return `${distanceText} · ${rewardFocusTexts[boss.rewardFocus]}倾向 · ${gapText}。${boss.reason}`;
 });
 </script>

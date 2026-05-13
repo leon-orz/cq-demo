@@ -67,6 +67,26 @@ export function createStageUnlockFeedback(stage: number): RewardFeedbackEvent {
   };
 }
 
+export function createBossClearFeedback(stage: number): RewardFeedbackEvent {
+  return {
+    id: createFeedbackId(),
+    kind: 'boss',
+    level: 'success',
+    title: 'Boss 已击败',
+    message: `第 ${stage} 层 Boss 已突破，新的挂机目标已开放。`,
+  };
+}
+
+export function createBossFailedFeedback(stage: number, failureText: string): RewardFeedbackEvent {
+  return {
+    id: createFeedbackId(),
+    kind: 'boss',
+    level: 'warning',
+    title: 'Boss 挑战受阻',
+    message: `第 ${stage} 层：${failureText}`,
+  };
+}
+
 export function createInventoryFullFeedback(lostCount = 1): RewardFeedbackEvent {
   return {
     id: createFeedbackId(),

@@ -134,6 +134,54 @@ describe('战斗状态', () => {
     expect(useFeedbackStore().latestEvent?.title).toBe('推层成功');
   });
 
+  it('Boss 层胜利后应触发 Boss 通关反馈', () => {
+    const player = usePlayerStore();
+    const combat = useCombatStore();
+    player.$patch({
+      baseStats: {
+        str: 50,
+        dex: 10,
+        int: 10,
+        hp: 10000,
+        attack: 5000,
+        attackSpeed: 1,
+        critChance: 5,
+        critDamage: 150,
+        armor: 500,
+      },
+    });
+    combat.$patch({ currentStage: 10, highestUnlockedStage: 10 });
+
+    const result = combat.runSingleCombat();
+
+    expect(result?.win).toBe(true);
+    expect(useFeedbackStore().events.some((event) => event.title === 'Boss 已击败')).toBe(true);
+  });
+
+  it('Boss 层失败后应触发 Boss 失败反馈', () => {
+    const player = usePlayerStore();
+    const combat = useCombatStore();
+    player.$patch({
+      baseStats: {
+        str: 1,
+        dex: 1,
+        int: 1,
+        hp: 1,
+        attack: 1,
+        attackSpeed: 1,
+        critChance: 0,
+        critDamage: 150,
+        armor: 0,
+      },
+    });
+    combat.$patch({ currentStage: 10, highestUnlockedStage: 10 });
+
+    const result = combat.runSingleCombat();
+
+    expect(result?.win).toBe(false);
+    expect(useFeedbackStore().latestEvent?.title).toBe('Boss 挑战受阻');
+  });
+
   it('非最高层挑战胜利不应重复解锁层数', () => {
     const player = usePlayerStore();
     const combat = useCombatStore();

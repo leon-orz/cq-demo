@@ -56,6 +56,7 @@ export const useSaveStore = defineStore('save', {
           baseStats: player.baseStats,
           equipped: player.equipped,
           skillNodes: player.skillNodes,
+          trainingLevels: player.trainingLevels,
         },
         inventory: {
           items: inventory.items,
@@ -104,6 +105,7 @@ export const useSaveStore = defineStore('save', {
       const offline = useOfflineStore();
 
       player.$patch(clonedSnapshot.player);
+      player.normalizeTraining();
       inventory.$patch(clonedSnapshot.inventory);
       settings.$patch({
         itemScoreMode: isItemScoreMode(clonedSnapshot.settings.itemScoreMode)

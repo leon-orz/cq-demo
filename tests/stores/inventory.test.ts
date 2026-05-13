@@ -89,4 +89,28 @@ describe('背包状态', () => {
     expect(decomposed).toBe(1);
     expect(inventory.items.map((item) => item.id)).toEqual(['item_2']);
   });
+
+  it('应按容量计算背包压力档位和整理建议', () => {
+    const inventory = useInventoryStore();
+
+    expect(inventory.pressureLevel).toBe('normal');
+
+    for (let index = 0; index < INVENTORY_CAPACITY - 10; index += 1) {
+      inventory.addItem(createItem(index));
+    }
+    expect(inventory.pressureLevel).toBe('warning');
+    expect(inventory.pressureText).toContain('建议提前分解');
+
+    for (let index = INVENTORY_CAPACITY - 10; index < INVENTORY_CAPACITY - 5; index += 1) {
+      inventory.addItem(createItem(index));
+    }
+    expect(inventory.pressureLevel).toBe('critical');
+    expect(inventory.suggestedCleanupCount).toBeGreaterThan(0);
+
+    for (let index = INVENTORY_CAPACITY - 5; index < INVENTORY_CAPACITY; index += 1) {
+      inventory.addItem(createItem(index));
+    }
+    expect(inventory.pressureLevel).toBe('full');
+    expect(inventory.pressureText).toContain('已满');
+  });
 });

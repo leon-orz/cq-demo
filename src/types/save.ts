@@ -9,7 +9,7 @@ import type {
   SortDirection,
 } from './item';
 import type { OfflineReport } from './offline';
-import type { MainAttribute, PlayerBaseStats, SkillNode } from './player';
+import type { MainAttribute, PlayerBaseStats, SkillNode, TrainingLevels } from './player';
 
 export interface PlayerSaveState {
   name: string;
@@ -20,6 +20,7 @@ export interface PlayerSaveState {
   baseStats: PlayerBaseStats;
   equipped: EquippedItems;
   skillNodes: SkillNode[];
+  trainingLevels: TrainingLevels;
 }
 
 export interface InventorySaveState {

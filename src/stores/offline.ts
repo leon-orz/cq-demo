@@ -50,6 +50,7 @@ export const useOfflineStore = defineStore('offline', {
         baseStats: player.totalStats,
         equipped: player.equipped,
         skillNodes: player.skillNodes,
+        trainingLevels: player.trainingLevels,
       };
       const playerPower = combat.progressionSummary.current.playerPower;
 

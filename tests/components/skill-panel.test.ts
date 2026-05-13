@@ -30,12 +30,34 @@ describe('SkillPanel', () => {
 
     await wrapper
       .findAll('button')
+      .find((button) => button.text().includes('暴击'))!
+      .trigger('click');
+    await wrapper
+      .findAll('button')
       .find((button) => button.text() === '激活')!
       .trigger('click');
 
     expect(player.spentSkillPoints).toBe(1);
     expect(wrapper.text()).toContain('可用 0 / 总计 1');
     expect(wrapper.text()).toContain('已生效');
+  });
+
+  it('应默认折叠非寻宝分支并显示已激活计数', async () => {
+    const player = usePlayerStore();
+    player.level = 2;
+    player.activateSkillNode('crit_chance_1');
+    const wrapper = mount(SkillPanel);
+
+    expect(wrapper.text()).toContain('1/3');
+    expect(wrapper.text()).toContain('金币嗅觉');
+    expect(wrapper.text()).toContain('精准弱点');
+
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text().includes('暴击'))!
+      .trigger('click');
+
+    expect(wrapper.text()).not.toContain('精准弱点');
   });
 
   it('激活寻宝节点后应更新收益属性', async () => {

@@ -62,6 +62,9 @@ describe('CenterPanel', () => {
     expect(wrapper.text()).toContain('当前战斗');
     expect(wrapper.text()).toContain('推荐挂机');
     expect(wrapper.text()).toContain('推层目标');
+    expect(wrapper.text()).toContain('Boss 目标');
+    expect(wrapper.text()).toContain('金币/秒');
+    expect(wrapper.text()).toContain('主收益');
     expect(wrapper.text()).toContain('当前评估');
     expect(wrapper.text()).toContain('收益倍率');
     expect(wrapper.text()).toContain('击杀预估');
@@ -99,7 +102,7 @@ describe('CenterPanel', () => {
     const challengeButton = wrapper.findAll('button').find((button) => button.text() === '挑战一次')!;
 
     expect(challengeButton.attributes('disabled')).toBeDefined();
-    expect(wrapper.text()).toContain('背包已满，请先分解或穿戴装备。');
+    expect(wrapper.text()).toContain('背包已满，请先整理装备。');
   });
 
   it('应能切换推荐挂机层和最高已解锁层', async () => {
@@ -129,5 +132,18 @@ describe('CenterPanel', () => {
     const wrapper = mountCenterPanel();
 
     expect(wrapper.text()).toContain('战斗失败，自动挂机已暂停。');
+  });
+
+  it('接近满包时应显示背包压力提示但不禁用挑战', () => {
+    const inventory = useInventoryStore();
+    for (let index = 0; index < INVENTORY_CAPACITY - 5; index += 1) {
+      inventory.addItem(createItem(index));
+    }
+
+    const wrapper = mountCenterPanel();
+    const challengeButton = wrapper.findAll('button').find((button) => button.text() === '挑战一次')!;
+
+    expect(challengeButton.attributes('disabled')).toBeUndefined();
+    expect(wrapper.text()).toContain('自动挂机可能很快暂停');
   });
 });

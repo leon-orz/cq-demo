@@ -41,6 +41,7 @@ function kindLabel(kind: RewardFeedbackKind): string {
     stage: '推层',
     offline: '离线',
     inventory: '背包',
+    boss: 'Boss',
   };
   return labels[kind];
 }

@@ -24,6 +24,8 @@ export interface DecomposePreview {
   materials: number;
 }
 
+export type InventoryPressureLevel = 'normal' | 'warning' | 'critical' | 'full';
+
 export const useInventoryStore = defineStore('inventory', {
   state: (): InventoryState => ({
     items: [],
@@ -38,6 +40,25 @@ export const useInventoryStore = defineStore('inventory', {
     isFull: (state) => state.items.length >= INVENTORY_CAPACITY,
     usedSlots: (state) => state.items.length,
     remainingSlots: (state) => Math.max(0, INVENTORY_CAPACITY - state.items.length),
+    usageRatio(state): number {
+      return state.items.length / INVENTORY_CAPACITY;
+    },
+    pressureLevel(): InventoryPressureLevel {
+      if (this.isFull) return 'full';
+      if (this.remainingSlots <= Math.ceil(INVENTORY_CAPACITY * 0.1)) return 'critical';
+      if (this.remainingSlots <= Math.ceil(INVENTORY_CAPACITY * 0.2)) return 'warning';
+      return 'normal';
+    },
+    suggestedCleanupCount(): number {
+      if (this.pressureLevel === 'normal') return 0;
+      return Math.max(1, Math.ceil(INVENTORY_CAPACITY * 0.25) - this.remainingSlots);
+    },
+    pressureText(): string {
+      if (this.pressureLevel === 'full') return '背包已满，请先整理装备。';
+      if (this.pressureLevel === 'critical') return `背包仅剩 ${this.remainingSlots} 格，自动挂机可能很快暂停。`;
+      if (this.pressureLevel === 'warning') return `背包剩余 ${this.remainingSlots} 格，建议提前分解低品质装备。`;
+      return '背包空间充足。';
+    },
   },
 
   actions: {

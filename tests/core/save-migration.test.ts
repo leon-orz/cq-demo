@@ -35,6 +35,11 @@ function createSnapshot(overrides: Partial<GameSaveSnapshot> = {}): GameSaveSnap
         necklace: null,
       },
       skillNodes: [],
+      trainingLevels: {
+        attack: 0,
+        vitality: 0,
+        guard: 0,
+      },
     },
     inventory: {
       items: [],
@@ -132,6 +137,21 @@ describe('存档迁移', () => {
     expect(result.snapshot?.offline).toEqual({
       pendingReport: null,
       lastCheckedAt: null,
+    });
+  });
+
+  it('旧存档缺少训练等级时应补默认训练状态', () => {
+    const snapshot = createSnapshot();
+    const legacyPlayer = { ...snapshot.player } as Partial<GameSaveSnapshot['player']>;
+    delete legacyPlayer.trainingLevels;
+
+    const result = migrateSaveSnapshot({ ...snapshot, player: legacyPlayer });
+
+    expect(result.ok).toBe(true);
+    expect(result.snapshot?.player.trainingLevels).toEqual({
+      attack: 0,
+      vitality: 0,
+      guard: 0,
     });
   });
 

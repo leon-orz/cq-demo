@@ -33,6 +33,7 @@ function createPlayer(overrides: Partial<PlayerBuild['baseStats']> = {}): Player
       necklace: null,
     },
     skillNodes: [],
+    trainingLevels: { attack: 0, vitality: 0, guard: 0 },
   };
 }
 

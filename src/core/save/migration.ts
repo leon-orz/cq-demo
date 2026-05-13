@@ -1,4 +1,5 @@
 import { defaultItemScoreMode, isItemScoreMode } from '@/core/item/filter';
+import { normalizeTrainingLevels } from '@/core/player/training';
 import type { GameSaveSnapshot } from '@/types/save';
 
 export const CURRENT_SAVE_SCHEMA_VERSION = 1;
@@ -44,10 +45,18 @@ function normalizeV1Snapshot(input: Record<string, unknown>): SaveMigrationResul
   const savedAt = typeof input.savedAt === 'number' ? input.savedAt : Date.now();
   const combat = input.combat as Record<string, unknown>;
   const settings = input.settings as Record<string, unknown>;
+  const player = input.player as Record<string, unknown>;
   const snapshot = {
     schemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
     savedAt,
-    player: input.player,
+    player: {
+      ...player,
+      trainingLevels: normalizeTrainingLevels(
+        typeof player.trainingLevels === 'object' && player.trainingLevels !== null
+          ? (player.trainingLevels as Record<string, number>)
+          : {},
+      ),
+    },
     inventory: input.inventory,
     settings: {
       ...settings,
