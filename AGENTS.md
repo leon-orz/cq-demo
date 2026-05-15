@@ -43,7 +43,7 @@ JSON、Vue、TypeScript 文件统一使用 2 空格缩进，具体规则以 `.ed
 
 组件需要展示派生数据或流程编排时，优先通过 `stores` getter/action 或 `composables` 承接，不要在组件中直接堆叠核心计算。`core` 仍是纯逻辑来源，`composables` 只负责把纯逻辑和响应式状态组织成 UI 可消费的数据。
 
-提交前应运行 `npm run format:check`。需要自动整理时运行 `npm run format`。两份原始设计文档 `game-design-document.md` 和 `game-development-document.md` 暂不交给 Prettier 处理，避免产生大范围文档格式差异。
+提交前应运行 `npm run format:check`。需要自动整理时运行 `npm run format`。设计和开发文档统一维护在 `docs/` 目录，根目录不保留旧版设计文档，避免新旧文档冲突。
 
 命名示例：
 

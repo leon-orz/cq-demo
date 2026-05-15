@@ -39,61 +39,59 @@ npm run build
 ```text
 src/
 ├── core/         # 纯游戏逻辑，禁止依赖 Vue、Pinia、DOM
-├── data/         # 静态游戏配置
 ├── stores/       # Pinia 状态管理和状态修改入口
 ├── composables/  # 组件和 store/core 之间的流程编排或展示派生层
 ├── components/   # Vue UI 组件
+├── views/        # 页面级主界面
 ├── types/        # 共享领域类型
 └── utils/        # 通用工具函数和常量
 
 tests/
+├── components/   # UI 冒烟和关键交互测试
 ├── core/         # 核心纯逻辑测试
+├── services/     # 存档服务测试
 └── stores/       # Pinia store 行为测试
 
 docs/
-├── backlog/      # 剩余工作清单和后续排期入口
-├── design/       # 当前阶段设计方向和阶段修订
-├── plans/        # 连续开发路线图
-├── reports/      # 项目状态评估
-└── records/      # 开发记录、阶段复盘、美术资源需求和每日复盘
+├── START_HERE.md              # 开发入口和阶段验收标准
+├── DESIGN_PRIMER.md           # 阶段一必读设计精华版
+├── DEV_PRIMER.md              # 阶段一必读开发精华版
+├── GameDesignDocument.md      # 新版完整设计文档
+├── DevelopmentDocument.md     # 新版完整开发文档
+├── MVP-*.md                   # MVP 拆分文档
+└── records/                   # 开发记录、阶段复盘和关键取舍
 ```
 
 ## 当前状态
 
 已完成：
 
-- 自动战斗和基础收益。
-- 装备生成、背包容量、穿戴和属性重算。
-- 离线收益报告和领取流程。
-- 拾取过滤、自动转化、装备锁定、分解保护。
-- 装备评分、更优高亮、装备对比弹窗和分解确认弹窗。
-- 背包排序筛选面板。
-- 装备展示、装备对比、背包可见列表的数据流边界整理。
-- 离线收益先执行拾取过滤和自动转化，再按背包容量截断入包装备。
-- 右侧背包面板拆分为资源统计、分解入口、拾取过滤和列表区域。
-- 版本化本地存档快照、localForage 保存读取、导入导出和基础迁移。
+- 阶段一 MVP 主链路：挂机战斗、掉落装备、穿戴装备、属性变强、手动推层。
+- 核心逻辑：战斗公式、层数缩放、装备生成、装备评分、强化 +1 到 +5、离线收益。
+- 状态管理：`player`、`combat`、`equipment` 三个 Pinia store。
+- 存档系统：本地存档、导入导出、自动保存、页面隐藏即时保存和离线报告。
+- 主界面：角色属性、训练、战斗面板、背包、装备卡、装备对比、离线收益弹窗。
+- 稳定性补丁：实际战斗耗时结算、重复穿戴保护、坏档保护、前 10 层节奏调校。
+- 测试覆盖：核心规则、Store 行为、存档服务和 UI 关键交互。
 
 当前已知重点任务：
 
-- 构筑评分系统：让更优判断、装备对比、只看更优和分解保护支持流派偏好。
-- 推层目标系统：让玩家知道适合挂机哪层、为什么失败、为什么收益降低。
-- 掉落反馈系统：强化传说掉落、离线领取、背包满损失和层数突破反馈。
+- 真实浏览器手工验收阶段一完整链路。
+- 移动端布局、按钮密度和文本溢出检查。
+- 基于试玩继续微调掉落率、金币训练和强化消耗。
+- 阶段一可玩基线确认后，再规划背包筛选/整理、掉落展示等体验增强。
 
 ## 文档入口
 
+- [开发入口](docs/START_HERE.md)
+- [分阶段实施路线图](docs/DEVELOPMENT_ROADMAP.md)
+- [设计精华版](docs/DESIGN_PRIMER.md)
+- [开发精华版](docs/DEV_PRIMER.md)
+- [完整设计文档](docs/GameDesignDocument.md)
+- [完整开发文档](docs/DevelopmentDocument.md)
 - [开发记录索引](docs/records/README.md)
-- [剩余工作清单](docs/backlog/remaining-work-2026-05-09.md)
-- [当前阶段设计方向](docs/design/current-design-direction-2026-05-09.md)
-- [连续开发路线图](docs/plans/continuous-development-roadmap-2026-05-09.md)
-- [项目状态评估](docs/reports/project-status-2026-05-09.md)
-- [总任务拆解](docs/records/design-development-task-breakdown.md)
-- [依赖升级记录](docs/records/dependency-upgrade-notes.md)
-- [2026-05-09 开发复盘](docs/records/daily-review-2026-05-09.md)
 
-原始设计文档：
-
-- `game-design-document.md`
-- `game-development-document.md`
+设计和开发文档统一维护在 `docs/` 目录。根目录不再保留旧版 `game-design-document.md`、`game-development-document.md`、`game_design_doc.md`、`game_development_doc.md`，避免新旧文档冲突。
 
 ## 开发约束
 
