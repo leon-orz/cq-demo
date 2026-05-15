@@ -60,4 +60,15 @@ describe('CombatEngine', () => {
     expect(result.win).toBe(true);
     expect(result.killTime).toBeLessThan(60);
   });
+
+  it('批量模拟按实际战斗耗时推进', () => {
+    const player = createPlayer({ atk: 1, atkSpd: 1.5, strength: 0, maxHp: 5000, hp: 5000 });
+    const monster = FloorScaling.getMonsterForFloor(1);
+    const singleResult = CombatEngine.simulateBattle(player, monster);
+
+    expect(singleResult.win).toBe(true);
+    expect(CombatEngine.getBattleDurationMs(singleResult)).toBeGreaterThan(30_000);
+    expect(CombatEngine.simulateBatch(player, monster, 10_000)).toHaveLength(0);
+    expect(CombatEngine.simulateBatch(player, monster, 120_000)).toHaveLength(2);
+  });
 });

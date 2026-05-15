@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import CombatPanel from '@/components/combat/CombatPanel.vue';
 import EquipmentCard from '@/components/equipment/EquipmentCard.vue';
+import EquipmentCompare from '@/components/equipment/EquipmentCompare.vue';
 import MainView from '@/views/MainView.vue';
 import type { EquipmentItem } from '@/types';
 import { Rarity, ScoreMode, SlotType } from '@/types/enums';
@@ -67,5 +68,21 @@ describe('UI 冒烟测试', () => {
     await wrapper.trigger('click');
 
     expect(wrapper.emitted('click')?.[0]).toEqual([item]);
+  });
+
+  it('EquipmentCompare 选中已装备物品时不显示替换装备按钮', () => {
+    const item = createTestItem();
+    const wrapper = mount(EquipmentCompare, {
+      props: {
+        newItem: item,
+        equippedItem: item,
+        player: createDefaultPlayer(),
+        scoreMode: ScoreMode.BALANCED,
+      },
+    });
+
+    expect(wrapper.text()).toContain('该装备已穿戴在当前部位');
+    expect(wrapper.text()).not.toContain('替换装备');
+    expect(wrapper.find('button').text()).toBe('关闭');
   });
 });

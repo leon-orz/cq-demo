@@ -1,4 +1,4 @@
-import { computed, ref, watch } from 'vue';
+import { computed, getCurrentInstance, onBeforeUnmount, ref, watch } from 'vue';
 import type { GameState, OfflineReport, SaveEnvelope } from '@/types';
 import { OfflineCalculator } from '@/core/OfflineCalculator';
 import { SaveManager } from '@/services/SaveManager';
@@ -12,6 +12,9 @@ export function useGameSave() {
   const equipmentStore = useEquipmentStore();
   const offlineReport = ref<OfflineReport | null>(null);
   const initialized = ref(false);
+  const lastOnlineTimestamp = ref(Date.now());
+  const cleanupTasks: Array<() => void> = [];
+  let stopAutoSaveWatch: (() => void) | null = null;
 
   const gameState = computed<GameState>(() => ({
     player: playerStore.player,
@@ -27,20 +30,33 @@ export function useGameSave() {
       maxInventorySize: equipmentStore.maxInventorySize,
       scoreMode: equipmentStore.scoreMode,
     },
-    lastOnlineTimestamp: Date.now(),
+    lastOnlineTimestamp: lastOnlineTimestamp.value,
   }));
 
   function initialize(): void {
+    if (!stopAutoSaveWatch) {
+      stopAutoSaveWatch = watch(
+        gameState,
+        (state) => {
+          if (initialized.value) SaveManager.autoSave(state);
+        },
+        { deep: true },
+      );
+    }
+    if (cleanupTasks.length === 0) {
+      registerSaveListeners();
+    }
     const envelope = SaveManager.load();
     if (envelope) {
       applySave(envelope);
-      calculateOffline(envelope.timestamp);
+      calculateOffline(getOfflineTimestamp(envelope));
     }
     playerStore.recalculateStats();
     initialized.value = true;
   }
 
   function saveNow(): void {
+    lastOnlineTimestamp.value = Date.now();
     SaveManager.save(gameState.value);
   }
 
@@ -69,6 +85,7 @@ export function useGameSave() {
     equipmentStore.applySaveState(envelope.data.equipment);
     playerStore.applySaveState(envelope.data.player);
     combatStore.applySaveState(envelope.data.combat);
+    lastOnlineTimestamp.value = getOfflineTimestamp(envelope);
   }
 
   function calculateOffline(lastTimestamp: number): void {
@@ -83,13 +100,36 @@ export function useGameSave() {
     );
   }
 
-  watch(
-    gameState,
-    (state) => {
-      if (initialized.value) SaveManager.autoSave(state);
-    },
-    { deep: true },
-  );
+  function registerSaveListeners(): void {
+    const handlePageHide = (): void => {
+      saveNow();
+    };
+    const handleVisibilityChange = (): void => {
+      if (document.visibilityState === 'hidden') {
+        saveNow();
+      }
+    };
+
+    window.addEventListener('pagehide', handlePageHide);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    cleanupTasks.push(() => window.removeEventListener('pagehide', handlePageHide));
+    cleanupTasks.push(() => document.removeEventListener('visibilitychange', handleVisibilityChange));
+  }
+
+  function getOfflineTimestamp(envelope: SaveEnvelope): number {
+    return envelope.timestamp ?? envelope.data.lastOnlineTimestamp;
+  }
+
+  function cleanup(): void {
+    stopAutoSaveWatch?.();
+    stopAutoSaveWatch = null;
+    cleanupTasks.splice(0).forEach((task) => task());
+    SaveManager.cancelAutoSave();
+  }
+
+  if (getCurrentInstance()) {
+    onBeforeUnmount(cleanup);
+  }
 
   return {
     offlineReport,
@@ -98,5 +138,6 @@ export function useGameSave() {
     claimOfflineReport,
     exportSave,
     importSave,
+    cleanup,
   };
 }

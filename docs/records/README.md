@@ -5,3 +5,4 @@
 ## 2026-05-15
 
 - [阶段一 MVP 重构复盘](./stage-one-mvp-review-2026-05-15.md)
+- [P0 稳定性补丁复盘](./p0-stability-review-2026-05-15.md)

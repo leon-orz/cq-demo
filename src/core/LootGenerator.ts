@@ -165,13 +165,11 @@ export class LootGenerator {
   }
 
   static shouldDrop(magicFind = 0): boolean {
-    return (
-      Math.random() < GAME_CONSTANTS.BASE_DROP_RATE * (1 + Math.min(magicFind, GAME_CONSTANTS.MAGIC_FIND_CAP) * 0.01)
-    );
+    return Math.random() < GAME_CONSTANTS.BASE_DROP_RATE * (1 + Math.min(magicFind, GAME_CONSTANTS.MAGIC_FIND_CAP));
   }
 
   static rollRarity(itemLevel: number, magicFind = 0): Rarity {
-    const magicBonus = 1 + Math.min(magicFind, GAME_CONSTANTS.MAGIC_FIND_CAP) * 0.01;
+    const magicBonus = 1 + Math.min(magicFind, GAME_CONSTANTS.MAGIC_FIND_CAP);
     const legendaryRate = Math.min(0.001 + Math.log(Math.max(itemLevel, 1)) * 0.0025, 0.02) * magicBonus;
     const rareRate = 0.06 * magicBonus;
     const magicRate = 0.24 * magicBonus;

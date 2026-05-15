@@ -57,13 +57,27 @@ export class CombatEngine {
 
   static simulateBatch(player: Player, monster: Monster, durationMs: number): CombatResult[] {
     const results: CombatResult[] = [];
-    const battleCount = Math.floor(durationMs / GAME_CONSTANTS.COMBAT_INTERVAL_MS);
-    for (let index = 0; index < battleCount; index += 1) {
+    let remainingMs = Math.max(0, durationMs);
+
+    while (remainingMs >= GAME_CONSTANTS.COMBAT_INTERVAL_MS) {
       const result = this.simulateBattle(player, monster);
+      const battleDurationMs = this.getBattleDurationMs(result);
+      if (battleDurationMs > remainingMs) break;
+
       results.push(result);
+      remainingMs -= battleDurationMs;
       if (!result.win) break;
     }
     return results;
+  }
+
+  static getBattleDurationMs(result: Pick<CombatResult, 'killTime' | 'survivalTime'>): number {
+    const battleTimeSeconds = Math.min(
+      Math.max(0, result.killTime),
+      Math.max(0, result.survivalTime),
+      GAME_CONSTANTS.COMBAT_TIME_LIMIT_S,
+    );
+    return Math.max(GAME_CONSTANTS.COMBAT_INTERVAL_MS, Math.ceil(battleTimeSeconds * 1000));
   }
 
   private static calculateMonsterDPS(monster: Monster, player: Player): number {

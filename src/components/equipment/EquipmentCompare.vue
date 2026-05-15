@@ -18,9 +18,20 @@ const emit = defineEmits<{
   cancel: [];
 }>();
 
-const comparison = computed<EquipmentComparison>(() =>
-  GearScore.compareEquipment(props.newItem, props.equippedItem, props.player, props.scoreMode),
-);
+const isSelectedEquipped = computed(() => props.equippedItem?.id === props.newItem.id);
+
+const comparison = computed<EquipmentComparison>(() => {
+  if (isSelectedEquipped.value) {
+    return {
+      slot: props.newItem.slot,
+      dpsDiff: 0,
+      ehpDiff: 0,
+      scoreDiff: 0,
+      isBetter: false,
+    };
+  }
+  return GearScore.compareEquipment(props.newItem, props.equippedItem, props.player, props.scoreMode);
+});
 </script>
 
 <template>
@@ -70,11 +81,15 @@ const comparison = computed<EquipmentComparison>(() =>
     </div>
 
     <button
+      v-if="!isSelectedEquipped"
       class="mt-4 w-full rounded bg-ember px-3 py-2 text-sm font-semibold text-zinc-950"
       type="button"
       @click="emit('equip', newItem)"
     >
       替换装备
     </button>
+    <p v-else class="mt-4 rounded border border-emerald-400/40 bg-emerald-950/20 px-3 py-2 text-sm text-emerald-100">
+      该装备已穿戴在当前部位
+    </p>
   </section>
 </template>

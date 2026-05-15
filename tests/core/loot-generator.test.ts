@@ -29,6 +29,13 @@ describe('LootGenerator', () => {
     expect(LootGenerator.rollRarity(100, 50)).not.toBe(Rarity.ANCIENT);
   });
 
+  it('magicFind 按小数百分比提高掉落判定概率', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.6);
+
+    expect(LootGenerator.shouldDrop(0)).toBe(false);
+    expect(LootGenerator.shouldDrop(0.1)).toBe(true);
+  });
+
   it('普通装备不生成词缀', () => {
     vi.spyOn(LootGenerator, 'rollRarity').mockReturnValue(Rarity.NORMAL);
 

@@ -19,7 +19,7 @@ export const useCombatStore = defineStore('combat', () => {
   const isPaused = ref(false);
   const pauseReason = ref<PauseReason>('');
   const lastCombatResult = ref<CombatResult | null>(null);
-  const loopId = ref<ReturnType<typeof setInterval> | null>(null);
+  const loopId = ref<ReturnType<typeof setTimeout> | null>(null);
 
   const playerStore = usePlayerStore();
   const equipmentStore = useEquipmentStore();
@@ -37,13 +37,11 @@ export const useCombatStore = defineStore('combat', () => {
     isPaused.value = false;
     pauseReason.value = '';
     addLog('system', '开始挂机战斗');
-    loopId.value = setInterval(() => {
-      executeBattle();
-    }, GAME_CONSTANTS.COMBAT_INTERVAL_MS);
+    scheduleNextBattle();
   }
 
   function stopAutoCombat(reason: PauseReason = 'manual'): void {
-    if (loopId.value) window.clearInterval(loopId.value);
+    if (loopId.value) window.clearTimeout(loopId.value);
     loopId.value = null;
     isAutoCombat.value = false;
     isPaused.value = reason !== '';
@@ -51,6 +49,15 @@ export const useCombatStore = defineStore('combat', () => {
     if (reason === 'manual') addLog('system', '已停止挂机');
     else if (reason === 'inventory_full') addLog('system', '背包已满，挂机暂停');
     else if (reason) addLog('system', `挂机暂停：${reason}`);
+  }
+
+  function scheduleNextBattle(): void {
+    if (!isAutoCombat.value) return;
+    const projectedResult = CombatEngine.simulateBattle(playerStore.player, currentMonster.value);
+    loopId.value = setTimeout(() => {
+      executeBattle();
+      scheduleNextBattle();
+    }, CombatEngine.getBattleDurationMs(projectedResult));
   }
 
   function executeBattle(): CombatResult {
@@ -71,8 +78,12 @@ export const useCombatStore = defineStore('combat', () => {
       if (LootGenerator.shouldDrop(playerStore.player.magicFind) && !equipmentStore.isInventoryFull) {
         result.drops.push(LootGenerator.generateDrop(currentFloor.value, playerStore.player.magicFind));
       }
-      playerStore.gainGold(result.goldEarned * (1 + playerStore.player.goldFind));
-      playerStore.gainExp(result.expEarned * (1 + playerStore.player.expFind));
+      const actualGoldEarned = Math.floor(result.goldEarned * (1 + playerStore.player.goldFind));
+      const actualExpEarned = Math.floor(result.expEarned * (1 + playerStore.player.expFind));
+      result.goldEarned = actualGoldEarned;
+      result.expEarned = actualExpEarned;
+      playerStore.gainGold(actualGoldEarned);
+      playerStore.gainExp(actualExpEarned);
       result.drops.forEach((item) => equipmentStore.addToInventory(item));
       killCount.value += 1;
       playerStore.setFloor(Math.max(playerStore.player.highestFloor, currentFloor.value));

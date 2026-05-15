@@ -18,15 +18,20 @@ export class OfflineCalculator {
     const recommendedPower = FloorScaling.getRecommendedPower(floor);
     const power = CombatEngine.calculatePower(CombatEngine.calculateDPS(player), CombatEngine.calculateEHP(player));
     const rewardMultiplier = FloorScaling.getRewardMultiplier(power, recommendedPower) * effectiveMultiplier;
-    const battleCount = Math.floor((adjustedSeconds * 1000) / GAME_CONSTANTS.COMBAT_INTERVAL_MS);
+    let remainingMs = adjustedSeconds * 1000;
     let totalKills = 0;
     let totalGold = 0;
     let totalExp = 0;
     const totalDrops: EquipmentItem[] = [];
 
-    for (let index = 0; index < battleCount; index += 1) {
+    while (remainingMs >= GAME_CONSTANTS.COMBAT_INTERVAL_MS) {
       const result = CombatEngine.simulateBattle(player, monster);
+      const battleDurationMs = CombatEngine.getBattleDurationMs(result);
+      if (battleDurationMs > remainingMs) break;
+
+      remainingMs -= battleDurationMs;
       if (!result.win) break;
+
       totalKills += 1;
       totalGold += FloorScaling.getGoldReward(floor, rewardMultiplier, monster.type) * (1 + player.goldFind);
       totalExp += FloorScaling.getExpReward(floor, rewardMultiplier, monster.type) * (1 + player.expFind);

@@ -46,4 +46,25 @@ describe('OfflineCalculator', () => {
     expect(report.totalGold).toBeGreaterThan(0);
     expect(report.totalDrops.length).toBeLessThanOrEqual(20);
   });
+
+  it('慢击杀不会在短离线时长内按固定间隔刷出大量击杀', () => {
+    const slowPlayer: Player = {
+      ...player,
+      strength: 0,
+      atk: 2,
+      atkSpd: 1,
+      hp: 5000,
+      maxHp: 5000,
+      critRate: 0,
+      fireDamage: 0,
+      iceDamage: 0,
+      lightningDamage: 0,
+    };
+
+    const shortReport = OfflineCalculator.calculate(10, 1, slowPlayer, 20);
+    const longReport = OfflineCalculator.calculate(120, 1, slowPlayer, 20);
+
+    expect(shortReport.totalKills).toBe(0);
+    expect(longReport.totalKills).toBe(2);
+  });
 });

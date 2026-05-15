@@ -36,6 +36,9 @@ export const useEquipmentStore = defineStore('equipment', () => {
   function equip(item: EquipmentItem): EquipChange {
     const playerStore = usePlayerStore();
     const oldItem = equipped.value[item.slot];
+    if (oldItem?.id === item.id) {
+      return { slot: item.slot, equipped: item, unequipped: null };
+    }
     removeItemById(item.id);
     if (oldItem) inventory.value.push(oldItem);
     equipped.value[item.slot] = item;
@@ -125,14 +128,15 @@ export const useEquipmentStore = defineStore('equipment', () => {
     const playerStore = usePlayerStore();
     const changes: EquipChange[] = [];
     for (const slot of ALL_SLOTS) {
-      const candidates = [...getItemsForSlot(slot), ...(equipped.value[slot] ? [equipped.value[slot]] : [])].filter(
-        (item): item is EquipmentItem => item !== null,
-      );
+      const equippedItem = equipped.value[slot];
+      const candidates = [...getItemsForSlot(slot), ...(equippedItem ? [equippedItem] : [])]
+        .filter((item): item is EquipmentItem => item !== null)
+        .filter((item, index, items) => items.findIndex((candidate) => candidate.id === item.id) === index);
       const best = candidates.sort(
         (a, b) =>
           GearScore.scoreEquipment(b, playerStore.player, mode) - GearScore.scoreEquipment(a, playerStore.player, mode),
       )[0];
-      if (best && equipped.value[slot]?.id !== best.id) {
+      if (best && equippedItem?.id !== best.id) {
         changes.push(equip(best));
       }
     }
