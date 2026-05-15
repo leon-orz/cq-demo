@@ -5,11 +5,11 @@ export const GAME_CONSTANTS = {
   MAX_CRIT_RATE: 0.75,
   MAX_DODGE: 0.6,
   ITEM_SCALE_BASE: 1.05,
-  MONSTER_GROWTH: 1.1,
-  RECOMMENDED_GROWTH: 1.12,
-  TRAINING_COST_GROWTH: 1.25,
-  ENHANCE_COST_GROWTH: 1.5,
-  BASE_RECOMMENDED_POWER: 100,
+  MONSTER_GROWTH: 1.08,
+  RECOMMENDED_GROWTH: 1.09,
+  TRAINING_COST_GROWTH: 1.22,
+  ENHANCE_COST_GROWTH: 1.42,
+  BASE_RECOMMENDED_POWER: 90,
   COMBAT_INTERVAL_MS: 1200,
   COMBAT_TIME_LIMIT_S: 60,
   OFFLINE_SOFT_CAP_HOURS: 12,
@@ -17,10 +17,10 @@ export const GAME_CONSTANTS = {
   INVENTORY_SIZE: 50,
   MAX_TRAINING_LEVEL: 200,
   MAX_ENHANCE_LEVEL: 5,
-  BASE_DROP_RATE: 0.55,
+  BASE_DROP_RATE: 0.42,
   MAIN_ATTR_BONUS: 0.01,
-  GOLD_FIND_CAP: 50,
-  MAGIC_FIND_CAP: 50,
+  GOLD_FIND_CAP: 0.5,
+  MAGIC_FIND_CAP: 0.5,
 } as const;
 
 export const ALL_SLOTS = [
@@ -84,9 +84,9 @@ export const MONSTER_TYPE_MODS: Record<
   { hpMod: number; atkMod: number; rewardMod: number; label: string }
 > = {
   [MonsterType.BALANCED]: { hpMod: 1, atkMod: 1, rewardMod: 1, label: '裂隙兽' },
-  [MonsterType.HIGH_HP]: { hpMod: 1.5, atkMod: 0.8, rewardMod: 1.1, label: '厚皮裂隙兽' },
-  [MonsterType.HIGH_ATK]: { hpMod: 0.8, atkMod: 1.5, rewardMod: 1.1, label: '狂暴裂隙兽' },
-  [MonsterType.REWARD]: { hpMod: 0.6, atkMod: 0.6, rewardMod: 1.3, label: '藏宝裂隙兽' },
+  [MonsterType.HIGH_HP]: { hpMod: 1.2, atkMod: 0.9, rewardMod: 1.06, label: '厚皮裂隙兽' },
+  [MonsterType.HIGH_ATK]: { hpMod: 0.9, atkMod: 1.08, rewardMod: 1.05, label: '狂暴裂隙兽' },
+  [MonsterType.REWARD]: { hpMod: 0.85, atkMod: 0.85, rewardMod: 1.12, label: '藏宝裂隙兽' },
 };
 
 export const ENHANCE_RATES = [1, 1, 1, 0.85, 0.85, 0.85, 0.65, 0.65, 0.65, 0.45, 0.3] as const;

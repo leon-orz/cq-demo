@@ -9,6 +9,7 @@ import type { GameState, OfflineReport, SaveEnvelope } from '@/types';
 import { Rarity, ScoreMode } from '@/types/enums';
 import { SaveManager } from '@/services/SaveManager';
 import { useCombatStore } from '@/stores/combat';
+import { SlotType } from '@/types/enums';
 
 function createEmptyOfflineReport(offlineSeconds: number): OfflineReport {
   return {
@@ -181,5 +182,42 @@ describe('useGameSave', () => {
     gameSave.importSave(JSON.stringify({ version: 1, timestamp: Date.now(), data: saveState }));
 
     expect(vi.getTimerCount()).toBe(timerCountAfterFirstImport);
+  });
+
+  it('领取离线收益后会清空报告并把结果写回玩家状态', () => {
+    const playerStore = usePlayerStore();
+    const equipmentStore = useEquipmentStore();
+    gameSave = useGameSave();
+
+    const report = createEmptyOfflineReport(180);
+    report.totalGold = 66;
+    report.totalExp = 33;
+    report.totalDrops = [
+      {
+        id: 'drop-1',
+        name: '离线掉落',
+        slot: SlotType.WEAPON,
+        rarity: Rarity.NORMAL,
+        itemLevel: 1,
+        baseStats: { atk: 1 },
+        affixes: [],
+        enhanceLevel: 0,
+        locked: false,
+        createdAt: Date.now(),
+      },
+    ];
+    gameSave.offlineReport.value = report;
+
+    const goldBefore = playerStore.player.gold;
+    const expBefore = playerStore.player.exp;
+
+    gameSave.claimOfflineReport();
+
+    expect(gameSave.offlineReport.value).toBeNull();
+    expect(playerStore.player.gold).toBe(goldBefore + 66);
+    expect(playerStore.player.exp).toBe(expBefore + 33);
+    expect(equipmentStore.inventory.some((item) => item.id === 'drop-1')).toBe(true);
+    expect(localStorage.getItem('idle_rift_save')).toContain('"gold":186');
+    expect(localStorage.getItem('idle_rift_save')).toContain('"exp":33');
   });
 });

@@ -30,7 +30,7 @@ describe('LootGenerator', () => {
   });
 
   it('magicFind 按小数百分比提高掉落判定概率', () => {
-    vi.spyOn(Math, 'random').mockReturnValue(0.6);
+    vi.spyOn(Math, 'random').mockReturnValue(0.44);
 
     expect(LootGenerator.shouldDrop(0)).toBe(false);
     expect(LootGenerator.shouldDrop(0.1)).toBe(true);

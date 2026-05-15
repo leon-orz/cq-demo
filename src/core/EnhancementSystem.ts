@@ -48,8 +48,8 @@ export class EnhancementSystem {
 
   static getCost(level: number): { gold: number; stones: number } {
     return {
-      gold: Math.floor(80 * Math.pow(GAME_CONSTANTS.ENHANCE_COST_GROWTH, level)),
-      stones: Math.max(1, Math.floor(3 * Math.pow(1.3, level))),
+      gold: Math.floor(72 * Math.pow(GAME_CONSTANTS.ENHANCE_COST_GROWTH, level)),
+      stones: Math.max(1, Math.floor(3 * Math.pow(1.25, level))),
     };
   }
 

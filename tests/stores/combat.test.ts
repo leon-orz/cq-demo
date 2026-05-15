@@ -70,4 +70,20 @@ describe('combat store', () => {
       true,
     );
   });
+
+  it('切换到不可挑战的高层时会返回失败且不改动当前层', () => {
+    const playerStore = usePlayerStore();
+    const combatStore = useCombatStore();
+
+    playerStore.player.highestFloor = 1;
+    playerStore.player.atk = 999;
+    playerStore.player.strength = 0;
+
+    const success = combatStore.changeFloor(999);
+
+    expect(success).toBe(false);
+    expect(combatStore.currentFloor).toBe(1);
+    expect(playerStore.player.currentFloor).toBe(1);
+    expect(combatStore.combatLog.some((entry) => entry.message.includes('切换到第 999 层'))).toBe(false);
+  });
 });

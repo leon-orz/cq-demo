@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { useEquipmentStore } from '@/stores/equipment';
 import { usePlayerStore } from '@/stores/player';
@@ -71,5 +71,36 @@ describe('equipment store', () => {
     expect(changes).toHaveLength(0);
     expect(equipmentStore.equipped[SlotType.WEAPON]?.id).toBe(equippedItem.id);
     expect(equipmentStore.inventory.map((item) => item.id)).toEqual([weakerItem.id]);
+  });
+
+  it('强化选中装备会消耗资源并提升强化等级', () => {
+    const equipmentStore = useEquipmentStore();
+    const playerStore = usePlayerStore();
+    const item = createItem({ enhanceLevel: 0 });
+    const goldBefore = playerStore.player.gold;
+    const stonesBefore = playerStore.player.enhancementStones;
+    vi.spyOn(Math, 'random').mockReturnValue(0);
+
+    const result = equipmentStore.enhance(item);
+
+    expect(result).toContain('强化成功');
+    expect(item.enhanceLevel).toBe(1);
+    expect(playerStore.player.gold).toBeLessThan(goldBefore);
+    expect(playerStore.player.enhancementStones).toBeLessThan(stonesBefore);
+  });
+
+  it('强化达到上限时不会消耗资源并返回上限提示', () => {
+    const equipmentStore = useEquipmentStore();
+    const playerStore = usePlayerStore();
+    const item = createItem({ enhanceLevel: 5 });
+    const goldBefore = playerStore.player.gold;
+    const stonesBefore = playerStore.player.enhancementStones;
+
+    const result = equipmentStore.enhance(item);
+
+    expect(result).toContain('上限');
+    expect(item.enhanceLevel).toBe(5);
+    expect(playerStore.player.gold).toBe(goldBefore);
+    expect(playerStore.player.enhancementStones).toBe(stonesBefore);
   });
 });

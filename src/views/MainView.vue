@@ -127,6 +127,10 @@ function claimOfflineReport(): void {
     report.totalExp,
   )} 经验、${dropCount} 件装备`;
 }
+
+function handleFloorChange(success: boolean, floor: number): void {
+  lastMessage.value = success ? `已切换到第 ${floor} 层` : `第 ${floor} 层暂不可挑战`;
+}
 </script>
 
 <template>
@@ -142,6 +146,7 @@ function claimOfflineReport(): void {
           </div>
           <button
             class="rounded border border-zinc-600 px-2.5 py-1 text-xs text-zinc-200"
+            data-testid="save-button"
             type="button"
             @click="gameSave.saveNow"
           >
@@ -201,6 +206,7 @@ function claimOfflineReport(): void {
         <div class="mt-3 space-y-2">
           <button
             class="w-full rounded border border-zinc-600 px-3 py-2 text-left text-sm"
+            data-testid="train-attack"
             type="button"
             @click="train('attack')"
           >
@@ -209,6 +215,7 @@ function claimOfflineReport(): void {
           </button>
           <button
             class="w-full rounded border border-zinc-600 px-3 py-2 text-left text-sm"
+            data-testid="train-vitality"
             type="button"
             @click="train('vitality')"
           >
@@ -217,6 +224,7 @@ function claimOfflineReport(): void {
           </button>
           <button
             class="w-full rounded border border-zinc-600 px-3 py-2 text-left text-sm"
+            data-testid="train-defense"
             type="button"
             @click="train('defense')"
           >
@@ -248,7 +256,7 @@ function claimOfflineReport(): void {
     </aside>
 
     <section class="space-y-4">
-      <CombatPanel />
+      <CombatPanel @floor-change="handleFloorChange" />
       <EquipmentCompare
         v-if="selectedItem"
         :new-item="selectedItem"
@@ -295,6 +303,7 @@ function claimOfflineReport(): void {
           </div>
           <button
             class="rounded bg-ember px-3 py-1.5 text-xs font-semibold text-zinc-950"
+            data-testid="equip-best"
             type="button"
             @click="equipBest"
           >
@@ -344,6 +353,7 @@ function claimOfflineReport(): void {
           </button>
           <button
             class="rounded border px-2.5 py-1 text-xs"
+            data-testid="enhance-selected"
             :class="
               selectedItem
                 ? selectedEnhanceAtCap

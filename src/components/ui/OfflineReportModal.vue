@@ -59,6 +59,7 @@ const rarities = [Rarity.NORMAL, Rarity.MAGIC, Rarity.RARE, Rarity.LEGENDARY, Ra
 
       <button
         class="mt-5 w-full rounded bg-ember px-4 py-2 text-sm font-semibold text-zinc-950"
+        data-testid="claim-offline-report"
         type="button"
         @click="emit('claim')"
       >

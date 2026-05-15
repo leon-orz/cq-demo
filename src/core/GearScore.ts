@@ -77,7 +77,7 @@ export class GearScore {
     player: Player,
     mode: ScoreMode,
   ): EquipmentComparison {
-    const beforePlayer = structuredClone(player);
+    const beforePlayer = clonePlayer(player);
     const afterPlayer = this.applyEquipmentDelta(player, oldItem, newItem);
     const beforeDps = CombatEngine.calculateDPS(beforePlayer);
     const beforeEhp = CombatEngine.calculateEHP(beforePlayer);
@@ -104,7 +104,7 @@ export class GearScore {
     removeItem: EquipmentItem | null,
     addItem: EquipmentItem | null,
   ): Player {
-    const next = structuredClone(player);
+    const next = clonePlayer(player);
     if (removeItem) this.applyItem(next, removeItem, -1);
     if (addItem) this.applyItem(next, addItem, 1);
     next.hp = next.maxHp;
@@ -127,4 +127,11 @@ export class GearScore {
       applyStat(LootGenerator.getAffixStat(affix.type), affix.value);
     }
   }
+}
+
+function clonePlayer(player: Player): Player {
+  return {
+    ...player,
+    training: { ...player.training },
+  };
 }

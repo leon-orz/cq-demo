@@ -8,6 +8,10 @@ const combatStore = useCombatStore();
 const playerStore = usePlayerStore();
 const targetFloor = ref(combatStore.currentFloor);
 
+const emit = defineEmits<{
+  'floor-change': [success: boolean, floor: number];
+}>();
+
 const monsterDps = computed(() => combatStore.currentMonster.atk * combatStore.currentMonster.atkSpd);
 
 watch(
@@ -18,7 +22,8 @@ watch(
 );
 
 function applyFloor(): void {
-  combatStore.changeFloor(targetFloor.value);
+  const success = combatStore.changeFloor(targetFloor.value);
+  emit('floor-change', success, success ? combatStore.currentFloor : targetFloor.value);
 }
 </script>
 
@@ -86,6 +91,7 @@ function applyFloor(): void {
           />
           <button
             class="rounded border border-zinc-600 px-3 py-2 text-sm text-zinc-100"
+            data-testid="floor-apply"
             type="button"
             @click="applyFloor"
           >
