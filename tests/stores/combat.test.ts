@@ -1,253 +1,52 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { useCombatStore } from '@/stores/combat';
-import { useFeedbackStore } from '@/stores/feedback';
-import { useInventoryStore } from '@/stores/inventory';
+import { useEquipmentStore } from '@/stores/equipment';
 import { usePlayerStore } from '@/stores/player';
-import { INVENTORY_CAPACITY, MAX_LOG_ENTRIES } from '@/utils/constants';
-import { applyRewardDecay } from '@/core/combat/reward';
-import type { Item } from '@/types/item';
+import type { EquipmentItem } from '@/types';
+import { Rarity, SlotType } from '@/types/enums';
 
-function createItem(index: number): Item {
+function createItem(id: string): EquipmentItem {
   return {
-    id: `item_${index}`,
-    name: `测试装备 ${index}`,
-    slot: 'weapon',
-    rarity: 'normal',
+    id,
+    name: '测试短剑',
+    slot: SlotType.WEAPON,
+    rarity: Rarity.NORMAL,
     itemLevel: 1,
-    baseStats: { attack: 1 },
+    baseStats: { atk: 1 },
     affixes: [],
+    enhanceLevel: 0,
+    locked: false,
+    createdAt: 1,
   };
 }
 
-describe('战斗状态', () => {
+describe('combat store', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
   });
 
-  it('背包满时不应启动自动挂机', () => {
-    const inventory = useInventoryStore();
-    const combat = useCombatStore();
+  it('背包满时 executeBattle 立即暂停且不发放奖励', () => {
+    const playerStore = usePlayerStore();
+    const equipmentStore = useEquipmentStore();
+    const combatStore = useCombatStore();
+    const goldBefore = playerStore.player.gold;
+    const expBefore = playerStore.player.exp;
 
-    for (let index = 0; index < INVENTORY_CAPACITY; index += 1) {
-      inventory.addItem(createItem(index));
-    }
+    equipmentStore.maxInventorySize = 1;
+    equipmentStore.addToInventory(createItem('filled-slot'));
 
-    combat.setAutoFighting(true);
+    const result = combatStore.executeBattle();
 
-    expect(combat.isAutoFighting).toBe(false);
-    expect(combat.stoppedReason).toContain('背包已满');
-  });
-
-  it('背包满时单次战斗应被前置拦截', () => {
-    const inventory = useInventoryStore();
-    const combat = useCombatStore();
-
-    for (let index = 0; index < INVENTORY_CAPACITY; index += 1) {
-      inventory.addItem(createItem(index));
-    }
-
-    const result = combat.runSingleCombat();
-
-    expect(result).toBeNull();
-    expect(combat.stoppedReason).toContain('背包已满');
-  });
-
-  it('自动战斗失败时应暂停挂机', () => {
-    const player = usePlayerStore();
-    const combat = useCombatStore();
-
-    player.$patch({
-      baseStats: {
-        str: 1,
-        dex: 1,
-        int: 1,
-        hp: 1,
-        attack: 1,
-        attackSpeed: 1,
-        critChance: 0,
-        critDamage: 150,
-        armor: 0,
-      },
-    });
-
-    combat.setAutoFighting(true);
-    const result = combat.runSingleCombat('auto');
-
-    expect(result?.win).toBe(false);
-    expect(combat.isAutoFighting).toBe(false);
-    expect(combat.stoppedReason).toContain('战斗失败');
-  });
-
-  it('应提供推层目标摘要并支持切换推荐挂机层', () => {
-    const player = usePlayerStore();
-    const combat = useCombatStore();
-    player.$patch({
-      baseStats: {
-        str: 20,
-        dex: 10,
-        int: 10,
-        hp: 1500,
-        attack: 220,
-        attackSpeed: 1,
-        critChance: 5,
-        critDamage: 150,
-        armor: 100,
-      },
-    });
-    combat.$patch({ currentStage: 1, highestUnlockedStage: 8 });
-
-    const summary = combat.progressionSummary;
-
-    expect(summary.recommendedFarmStage).toBeGreaterThanOrEqual(1);
-    expect(summary.recommendedFarmStage).toBeLessThanOrEqual(8);
-
-    combat.switchToRecommendedFarmStage();
-
-    expect(combat.currentStage).toBe(summary.recommendedFarmStage);
-    expect(combat.logs.at(-1)?.message).toContain('推荐挂机层');
-  });
-
-  it('最高已解锁层挑战胜利后应解锁下一层', () => {
-    const player = usePlayerStore();
-    const combat = useCombatStore();
-    player.$patch({
-      baseStats: {
-        str: 20,
-        dex: 10,
-        int: 10,
-        hp: 2000,
-        attack: 500,
-        attackSpeed: 1,
-        critChance: 5,
-        critDamage: 150,
-        armor: 100,
-      },
-    });
-    combat.$patch({ currentStage: 1, highestUnlockedStage: 1 });
-
-    const result = combat.runSingleCombat();
-
-    expect(result?.win).toBe(true);
-    expect(combat.highestUnlockedStage).toBe(2);
-    expect(combat.logs.some((log) => log.message.includes('推层成功'))).toBe(true);
-    expect(useFeedbackStore().latestEvent?.title).toBe('推层成功');
-  });
-
-  it('Boss 层胜利后应触发 Boss 通关反馈', () => {
-    const player = usePlayerStore();
-    const combat = useCombatStore();
-    player.$patch({
-      baseStats: {
-        str: 50,
-        dex: 10,
-        int: 10,
-        hp: 10000,
-        attack: 5000,
-        attackSpeed: 1,
-        critChance: 5,
-        critDamage: 150,
-        armor: 500,
-      },
-    });
-    combat.$patch({ currentStage: 10, highestUnlockedStage: 10 });
-
-    const result = combat.runSingleCombat();
-
-    expect(result?.win).toBe(true);
-    expect(useFeedbackStore().events.some((event) => event.title === 'Boss 已击败')).toBe(true);
-  });
-
-  it('Boss 层失败后应触发 Boss 失败反馈', () => {
-    const player = usePlayerStore();
-    const combat = useCombatStore();
-    player.$patch({
-      baseStats: {
-        str: 1,
-        dex: 1,
-        int: 1,
-        hp: 1,
-        attack: 1,
-        attackSpeed: 1,
-        critChance: 0,
-        critDamage: 150,
-        armor: 0,
-      },
-    });
-    combat.$patch({ currentStage: 10, highestUnlockedStage: 10 });
-
-    const result = combat.runSingleCombat();
-
-    expect(result?.win).toBe(false);
-    expect(useFeedbackStore().latestEvent?.title).toBe('Boss 挑战受阻');
-  });
-
-  it('非最高层挑战胜利不应重复解锁层数', () => {
-    const player = usePlayerStore();
-    const combat = useCombatStore();
-    player.$patch({
-      baseStats: {
-        str: 20,
-        dex: 10,
-        int: 10,
-        hp: 2000,
-        attack: 500,
-        attackSpeed: 1,
-        critChance: 5,
-        critDamage: 150,
-        armor: 100,
-      },
-    });
-    combat.$patch({ currentStage: 1, highestUnlockedStage: 3 });
-
-    const result = combat.runSingleCombat();
-
-    expect(result?.win).toBe(true);
-    expect(combat.highestUnlockedStage).toBe(3);
-  });
-
-  it('在线结算收益倍率应与当前层评估口径一致', () => {
-    const player = usePlayerStore();
-    const combat = useCombatStore();
-    player.$patch({
-      level: 1,
-      baseStats: {
-        str: 20,
-        dex: 10,
-        int: 10,
-        hp: 2000,
-        attack: 500,
-        attackSpeed: 1,
-        critChance: 5,
-        critDamage: 150,
-        armor: 100,
-      },
-    });
-    combat.$patch({ currentStage: 3, highestUnlockedStage: 3 });
-    const expected = combat.progressionSummary.current;
-
-    const result = combat.runSingleCombat();
-    const expectedReward = applyRewardDecay(
-      result?.gold ?? 0,
-      result?.exp ?? 0,
-      expected.playerPower,
-      combat.stageConfig.recommendedPower,
-    );
-
-    expect(result?.win).toBe(true);
-    expect(useInventoryStore().gold).toBe(expectedReward.gold);
-    expect(usePlayerStore().exp).toBeGreaterThanOrEqual(expectedReward.exp);
-  });
-
-  it('战斗日志应只保留最新条目', () => {
-    const combat = useCombatStore();
-
-    for (let index = 0; index < MAX_LOG_ENTRIES + 5; index += 1) {
-      combat.addLog(`日志 ${index}`);
-    }
-
-    expect(combat.logs).toHaveLength(MAX_LOG_ENTRIES);
-    expect(combat.logs[0]?.message).toBe('日志 5');
-    expect(combat.logs.at(-1)?.message).toBe(`日志 ${MAX_LOG_ENTRIES + 4}`);
+    expect(result.win).toBe(false);
+    expect(result.goldEarned).toBe(0);
+    expect(result.expEarned).toBe(0);
+    expect(result.drops).toHaveLength(0);
+    expect(playerStore.player.gold).toBe(goldBefore);
+    expect(playerStore.player.exp).toBe(expBefore);
+    expect(equipmentStore.inventoryCount).toBe(1);
+    expect(combatStore.isPaused).toBe(true);
+    expect(combatStore.pauseReason).toBe('inventory_full');
+    expect(combatStore.combatLog[0]?.message).toBe('背包已满，挂机暂停');
   });
 });

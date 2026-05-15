@@ -1,88 +1,63 @@
 import { describe, expect, it } from 'vitest';
-import { simulateCombat } from '@/core/combat/engine';
-import { SeededRandom } from '@/core/utils/random';
-import type { Monster } from '@/types/combat';
-import type { PlayerBuild } from '@/types/player';
+import type { Player } from '@/types';
+import { CombatEngine } from '@/core/CombatEngine';
+import { FloorScaling } from '@/core/FloorScaling';
+import { ClassType } from '@/types/enums';
 
-function createPlayer(overrides: Partial<PlayerBuild['baseStats']>): PlayerBuild {
+function createPlayer(overrides: Partial<Player> = {}): Player {
   return {
+    classType: ClassType.WARRIOR,
     level: 1,
-    mainAttribute: 'str',
-    baseStats: {
-      str: 10,
-      dex: 10,
-      int: 10,
-      hp: 100,
-      attack: 20,
-      attackSpeed: 1,
-      critChance: 5,
-      critDamage: 150,
-      armor: 0,
-      ...overrides,
-    },
-    equipped: {
-      weapon: null,
-      offhand: null,
-      helmet: null,
-      armor: null,
-      gloves: null,
-      shoes: null,
-      ring1: null,
-      ring2: null,
-      necklace: null,
-    },
-    skillNodes: [],
-    trainingLevels: { attack: 0, vitality: 0, guard: 0 },
+    exp: 0,
+    expToNext: 100,
+    strength: 100,
+    agility: 5,
+    intelligence: 5,
+    hp: 500,
+    maxHp: 500,
+    atk: 50,
+    atkSpd: 1.5,
+    critRate: 0.2,
+    critDmg: 2,
+    armor: 50,
+    dodge: 0.05,
+    fireDamage: 0,
+    iceDamage: 0,
+    lightningDamage: 0,
+    fireRes: 0,
+    iceRes: 0,
+    lightningRes: 0,
+    goldFind: 0,
+    magicFind: 0,
+    expFind: 0,
+    lifeLeech: 0,
+    gold: 0,
+    enhancementStones: 0,
+    ancientEssence: 0,
+    currentFloor: 1,
+    highestFloor: 1,
+    training: { attack: 0, vitality: 0, defense: 0 },
+    ...overrides,
   };
 }
 
-const monster: Monster = {
-  id: 'test_monster',
-  name: '测试怪物',
-  archetype: 'balanced',
-  level: 1,
-  hp: 100,
-  attack: 5,
-  gold: 10,
-  exp: 12,
-};
+describe('CombatEngine', () => {
+  it('按照文档公式计算 DPS、EHP 和战力', () => {
+    const player = createPlayer();
 
-describe('战斗引擎', () => {
-  it('战力足够时应获胜', () => {
-    const result = simulateCombat(createPlayer({ attack: 500, hp: 1000 }), monster, 60, new SeededRandom(1));
+    expect(CombatEngine.calculateDPS(player)).toBeCloseTo(180);
+    expect(CombatEngine.calculateEHP(player)).toBeGreaterThan(570);
+    expect(
+      CombatEngine.calculatePower(CombatEngine.calculateDPS(player), CombatEngine.calculateEHP(player)),
+    ).toBeGreaterThan(1000);
+  });
+
+  it('能模拟一场胜利战斗', () => {
+    const player = createPlayer();
+    const monster = FloorScaling.getMonsterForFloor(1);
+    const result = CombatEngine.simulateBattle(player, monster);
 
     expect(result.win).toBe(true);
-    expect(result.gold).toBe(10);
-    expect(result.exp).toBe(12);
-    expect(result.duration).toBeLessThan(1);
-  });
-
-  it('战力不足时应失败', () => {
-    const result = simulateCombat(createPlayer({ attack: 1, hp: 20 }), monster, 60, new SeededRandom(1));
-
-    expect(result.win).toBe(false);
-    expect(result.drops).toHaveLength(0);
-  });
-
-  it('magicFind 应提高有效掉落率', () => {
-    const lowDropMonster: Monster = {
-      ...monster,
-      dropChance: 0.2,
-    };
-    const noMagicFind = simulateCombat(
-      createPlayer({ attack: 500, hp: 1000, magicFind: 0 }),
-      lowDropMonster,
-      60,
-      new SeededRandom(5),
-    );
-    const withMagicFind = simulateCombat(
-      createPlayer({ attack: 500, hp: 1000, magicFind: 300 }),
-      lowDropMonster,
-      60,
-      new SeededRandom(5),
-    );
-
-    expect(noMagicFind.drops).toHaveLength(0);
-    expect(withMagicFind.drops).toHaveLength(1);
+    expect(result.killTime).toBeLessThan(60);
   });
 });

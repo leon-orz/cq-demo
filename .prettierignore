@@ -8,5 +8,8 @@ package-lock.json
 
 public/assets/
 
+docs/
+game_design_doc.md
+game_development_doc.md
 game-design-document.md
 game-development-document.md

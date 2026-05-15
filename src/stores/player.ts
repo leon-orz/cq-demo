@@ -1,185 +1,215 @@
+import { computed, ref } from 'vue';
 import { defineStore } from 'pinia';
-import { createDefaultSkillNodes, mergeSkillNodes } from '@/data/skills';
-import { trainingDefinitions } from '@/data/training';
-import { calculateDps, calculateEhp, calculateGearScore, calculateTotalStats } from '@/core/player/calculator';
-import {
-  calculateTrainingBonuses,
-  findTrainingDefinition,
-  getTrainingUpgradePreview,
-  normalizeTrainingLevels,
-  upgradeTrainingLevel,
-} from '@/core/player/training';
-import type { EquipmentSlot, EquippedItems, Item } from '@/types/item';
-import type { MainAttribute, PlayerBaseStats, SkillNode, TrainingId, TrainingLevels } from '@/types/player';
-import { useInventoryStore } from './inventory';
+import type { EquipmentItem, Player } from '@/types';
+import { ClassType } from '@/types/enums';
+import { CombatEngine } from '@/core/CombatEngine';
+import { GAME_CONSTANTS } from '@/utils/constants';
+import { LootGenerator } from '@/core/LootGenerator';
+import { EnhancementSystem } from '@/core/EnhancementSystem';
+import { useEquipmentStore } from './equipment';
 
-interface PlayerState {
-  name: string;
-  level: number;
-  exp: number;
-  expToNext: number;
-  mainAttribute: MainAttribute;
-  baseStats: PlayerBaseStats;
-  equipped: EquippedItems;
-  skillNodes: SkillNode[];
-  trainingLevels: TrainingLevels;
-}
-
-function createEmptyEquipped(): EquippedItems {
+export function createDefaultPlayer(): Player {
   return {
-    weapon: null,
-    offhand: null,
-    helmet: null,
-    armor: null,
-    gloves: null,
-    shoes: null,
-    ring1: null,
-    ring2: null,
-    necklace: null,
-  };
-}
-
-export const usePlayerStore = defineStore('player', {
-  state: (): PlayerState => ({
-    name: '冒险者',
+    classType: ClassType.WARRIOR,
     level: 1,
     exp: 0,
     expToNext: 100,
-    mainAttribute: 'str',
-    baseStats: {
-      str: 10,
-      dex: 10,
-      int: 10,
-      hp: 120,
-      attack: 12,
-      attackSpeed: 1,
-      critChance: 5,
-      critDamage: 150,
-      armor: 4,
+    strength: 10,
+    agility: 5,
+    intelligence: 5,
+    hp: 120,
+    maxHp: 120,
+    atk: 12,
+    atkSpd: 1,
+    critRate: 0.05,
+    critDmg: 1.5,
+    armor: 12,
+    dodge: 0.02,
+    fireDamage: 0,
+    iceDamage: 0,
+    lightningDamage: 0,
+    fireRes: 0,
+    iceRes: 0,
+    lightningRes: 0,
+    goldFind: 0,
+    magicFind: 0,
+    expFind: 0,
+    lifeLeech: 0,
+    gold: 120,
+    enhancementStones: 8,
+    ancientEssence: 0,
+    currentFloor: 1,
+    highestFloor: 1,
+    training: {
+      attack: 0,
+      vitality: 0,
+      defense: 0,
     },
-    equipped: createEmptyEquipped(),
-    skillNodes: createDefaultSkillNodes(),
-    trainingLevels: normalizeTrainingLevels(),
-  }),
+  };
+}
 
-  getters: {
-    totalStats(state): PlayerBaseStats {
-      return calculateTotalStats(
-        state.baseStats,
-        state.equipped,
-        state.skillNodes,
-        calculateTrainingBonuses(state.trainingLevels),
-      );
-    },
+export const usePlayerStore = defineStore('player', () => {
+  const player = ref<Player>(createDefaultPlayer());
 
-    dps(): number {
-      return Math.round(calculateDps(this.totalStats, this.mainAttribute));
-    },
+  const dps = computed(() => CombatEngine.calculateDPS(player.value));
+  const ehp = computed(() => CombatEngine.calculateEHP(player.value));
+  const power = computed(() => CombatEngine.calculatePower(dps.value, ehp.value));
+  const mainAttribute = computed(() => CombatEngine.getMainAttribute(player.value));
 
-    ehp(): number {
-      return Math.round(calculateEhp(this.totalStats, this.level * 2 + 10));
-    },
+  function train(type: keyof Player['training']): boolean {
+    if (player.value.training[type] >= GAME_CONSTANTS.MAX_TRAINING_LEVEL) return false;
+    const cost = getTrainingCost(type);
+    if (!spendGold(cost)) return false;
+    player.value.training[type] += 1;
+    recalculateStats();
+    return true;
+  }
 
-    gearScore(state): number {
-      return calculateGearScore(state.equipped);
-    },
+  function getTrainingCost(type: keyof Player['training']): number {
+    const baseCost = type === 'attack' ? 25 : type === 'vitality' ? 20 : 22;
+    return Math.floor(baseCost * Math.pow(GAME_CONSTANTS.TRAINING_COST_GROWTH, player.value.training[type]));
+  }
 
-    skillPoints(state): number {
-      return Math.max(0, state.level - 1);
-    },
+  function spendGold(amount: number): boolean {
+    if (player.value.gold < amount) return false;
+    player.value.gold -= amount;
+    return true;
+  }
 
-    spentSkillPoints(state): number {
-      return state.skillNodes.filter((node) => node.active).length;
-    },
+  function gainGold(amount: number): void {
+    player.value.gold += Math.max(0, Math.floor(amount));
+  }
 
-    availableSkillPoints(): number {
-      return Math.max(0, this.skillPoints - this.spentSkillPoints);
-    },
+  function gainExp(amount: number): void {
+    player.value.exp += Math.max(0, Math.floor(amount));
+    while (player.value.exp >= player.value.expToNext) {
+      player.value.exp -= player.value.expToNext;
+      levelUp();
+    }
+  }
 
-    trainingPreviews(state) {
-      const inventory = useInventoryStore();
-      return trainingDefinitions.map((definition) =>
-        getTrainingUpgradePreview(definition, normalizeTrainingLevels(state.trainingLevels), inventory.gold),
-      );
-    },
+  function gainEnhancementStones(amount: number): void {
+    player.value.enhancementStones += Math.max(0, Math.floor(amount));
+  }
 
-    totalTrainingLevel(state): number {
-      const levels = normalizeTrainingLevels(state.trainingLevels);
-      return Object.values(levels).reduce((sum, level) => sum + level, 0);
-    },
-  },
+  function consumeEnhancementCost(gold: number, stones: number): boolean {
+    if (player.value.gold < gold || player.value.enhancementStones < stones) return false;
+    player.value.gold -= gold;
+    player.value.enhancementStones -= stones;
+    return true;
+  }
 
-  actions: {
-    normalizeSkillNodes() {
-      this.skillNodes = mergeSkillNodes(this.skillNodes);
-    },
+  function levelUp(): void {
+    player.value.level += 1;
+    player.value.expToNext = Math.floor(player.value.expToNext * 1.18 + 20);
+    player.value.strength += player.value.classType === ClassType.WARRIOR ? 3 : 1;
+    player.value.agility += player.value.classType === ClassType.ROGUE ? 3 : 1;
+    player.value.intelligence += player.value.classType === ClassType.MAGE ? 3 : 1;
+    recalculateStats();
+  }
 
-    activateSkillNode(nodeId: string): boolean {
-      this.normalizeSkillNodes();
-      if (this.availableSkillPoints <= 0) return false;
+  function changeClass(classType: ClassType): void {
+    player.value.classType = classType;
+    recalculateStats();
+  }
 
-      const node = this.skillNodes.find((target) => target.id === nodeId);
-      if (!node || node.active) return false;
+  function setFloor(floor: number): void {
+    const safeFloor = Math.max(1, Math.floor(floor));
+    player.value.currentFloor = safeFloor;
+    player.value.highestFloor = Math.max(player.value.highestFloor, safeFloor);
+  }
 
-      node.active = true;
-      return true;
-    },
+  function applySaveState(savedPlayer: Player): void {
+    player.value = structuredClone(savedPlayer);
+    recalculateStats();
+  }
 
-    resetSkillNodes() {
-      this.skillNodes = this.skillNodes.map((node) => ({ ...node, active: false }));
-    },
+  function recalculateStats(): void {
+    const preserved = {
+      gold: player.value.gold,
+      enhancementStones: player.value.enhancementStones,
+      ancientEssence: player.value.ancientEssence,
+      currentFloor: player.value.currentFloor,
+      highestFloor: player.value.highestFloor,
+      level: player.value.level,
+      exp: player.value.exp,
+      expToNext: player.value.expToNext,
+      classType: player.value.classType,
+      training: { ...player.value.training },
+    };
+    const next = createDefaultPlayer();
+    next.gold = preserved.gold;
+    next.enhancementStones = preserved.enhancementStones;
+    next.ancientEssence = preserved.ancientEssence;
+    next.currentFloor = preserved.currentFloor;
+    next.highestFloor = preserved.highestFloor;
+    next.level = preserved.level;
+    next.exp = preserved.exp;
+    next.expToNext = preserved.expToNext;
+    next.classType = preserved.classType;
+    next.training = preserved.training;
+    next.strength += (next.level - 1) * (next.classType === ClassType.WARRIOR ? 3 : 1);
+    next.agility += (next.level - 1) * (next.classType === ClassType.ROGUE ? 3 : 1);
+    next.intelligence += (next.level - 1) * (next.classType === ClassType.MAGE ? 3 : 1);
+    next.atk += trainingBonus(next.training.attack, 2);
+    next.maxHp += trainingBonus(next.training.vitality, 18);
+    next.armor += trainingBonus(next.training.defense, 3);
 
-    normalizeTraining() {
-      this.trainingLevels = normalizeTrainingLevels(this.trainingLevels);
-    },
+    const equipmentStore = useEquipmentStore();
+    Object.values(equipmentStore.equipped).forEach((item) => {
+      if (item) applyItemToPlayer(next, item);
+    });
 
-    upgradeTraining(trainingId: TrainingId): boolean {
-      this.normalizeTraining();
-      const definition = findTrainingDefinition(trainingId);
-      if (!definition) return false;
+    next.critRate = Math.min(next.critRate, GAME_CONSTANTS.MAX_CRIT_RATE);
+    next.atkSpd = Math.min(next.atkSpd, GAME_CONSTANTS.MAX_ATK_SPD);
+    next.dodge = Math.min(next.dodge, GAME_CONSTANTS.MAX_DODGE);
+    next.goldFind = Math.min(next.goldFind, GAME_CONSTANTS.GOLD_FIND_CAP);
+    next.magicFind = Math.min(next.magicFind, GAME_CONSTANTS.MAGIC_FIND_CAP);
+    next.hp = next.maxHp;
+    player.value = next;
+  }
 
-      const inventory = useInventoryStore();
-      const preview = getTrainingUpgradePreview(definition, this.trainingLevels, inventory.gold);
-      if (!preview.canAfford) return false;
+  function $reset(): void {
+    player.value = createDefaultPlayer();
+  }
 
-      inventory.gold -= preview.cost;
-      this.trainingLevels = upgradeTrainingLevel(this.trainingLevels, trainingId);
-      return true;
-    },
-
-    gainExp(amount: number) {
-      this.exp += amount;
-      while (this.exp >= this.expToNext) {
-        this.exp -= this.expToNext;
-        this.level += 1;
-        this.expToNext = Math.floor(this.expToNext * 1.2);
-      }
-    },
-
-    equipItem(slot: EquipmentSlot, item: Item) {
-      const inventory = useInventoryStore();
-      const removed = inventory.removeItem(item.id);
-      if (!removed) return;
-
-      const current = this.equipped[slot];
-      if (current) {
-        inventory.addItem(current);
-      }
-      this.equipped[slot] = removed;
-    },
-
-    unequipItem(slot: EquipmentSlot) {
-      const current = this.equipped[slot];
-      if (!current) return;
-
-      const inventory = useInventoryStore();
-      if (inventory.addItem(current)) {
-        this.equipped[slot] = null;
-      }
-    },
-  },
-
-  persist: {
-    key: 'player',
-  },
+  return {
+    player,
+    dps,
+    ehp,
+    power,
+    mainAttribute,
+    train,
+    getTrainingCost,
+    spendGold,
+    gainGold,
+    gainExp,
+    gainEnhancementStones,
+    consumeEnhancementCost,
+    levelUp,
+    changeClass,
+    setFloor,
+    applySaveState,
+    recalculateStats,
+    $reset,
+  };
 });
+
+function trainingBonus(level: number, base: number): number {
+  return Math.floor(base * level * (1 - Math.min(level, 200) * 0.0008));
+}
+
+function applyItemToPlayer(player: Player, item: EquipmentItem): void {
+  for (const [stat, value] of Object.entries(EnhancementSystem.getTotalStats(item)) as [keyof Player, number][]) {
+    addNumericStat(player, stat, value);
+  }
+  item.affixes.forEach((affix) => {
+    addNumericStat(player, LootGenerator.getAffixStat(affix.type), affix.value);
+  });
+}
+
+function addNumericStat(player: Player, stat: keyof Player, value: number): void {
+  if (typeof player[stat] === 'number') {
+    player[stat] = (player[stat] + value) as never;
+  }
+}

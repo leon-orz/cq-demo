@@ -1,201 +1,178 @@
+import { computed, ref } from 'vue';
 import { defineStore } from 'pinia';
-import { getStageConfig } from '@/data/monsters';
-import { simulateStageCombat } from '@/core/combat/engine';
-import { getProgressionTargetSummary } from '@/core/combat/progression';
-import {
-  createBossClearFeedback,
-  createBossFailedFeedback,
-  createFilteredHighlightFeedback,
-  createInventoryFullFeedback,
-  createItemDropFeedback,
-  createStageUnlockFeedback,
-} from '@/core/feedback/rewardFeedback';
-import { applyRewardDecay } from '@/core/combat/reward';
-import type { CombatResult, ProgressionTargetSummary } from '@/types/combat';
-import { MAX_LOG_ENTRIES } from '@/utils/constants';
-import { useFeedbackStore } from './feedback';
-import { useInventoryStore } from './inventory';
+import type { CombatLogEntry, CombatResult } from '@/types';
+import { CombatEngine } from '@/core/CombatEngine';
+import { FloorScaling } from '@/core/FloorScaling';
+import { LootGenerator } from '@/core/LootGenerator';
+import { GAME_CONSTANTS } from '@/utils/constants';
+import { generateId } from '@/utils/math';
+import { useEquipmentStore } from './equipment';
 import { usePlayerStore } from './player';
-import { useSettingsStore } from './settings';
 
-interface CombatLog {
-  id: number;
-  message: string;
-}
+type PauseReason = '' | 'death' | 'inventory_full' | 'manual';
 
-interface CombatState {
-  currentStage: number;
-  highestUnlockedStage: number;
-  isAutoFighting: boolean;
-  logs: CombatLog[];
-  lastResult: CombatResult | null;
-  totalAutoRuns: number;
-  stoppedReason: string | null;
-}
+export const useCombatStore = defineStore('combat', () => {
+  const currentFloor = ref(1);
+  const isAutoCombat = ref(false);
+  const combatLog = ref<CombatLogEntry[]>([]);
+  const killCount = ref(0);
+  const isPaused = ref(false);
+  const pauseReason = ref<PauseReason>('');
+  const lastCombatResult = ref<CombatResult | null>(null);
+  const loopId = ref<ReturnType<typeof setInterval> | null>(null);
 
-export const useCombatStore = defineStore('combat', {
-  state: (): CombatState => ({
-    currentStage: 1,
-    highestUnlockedStage: 1,
-    isAutoFighting: false,
-    logs: [],
-    lastResult: null,
-    totalAutoRuns: 0,
-    stoppedReason: null,
-  }),
+  const playerStore = usePlayerStore();
+  const equipmentStore = useEquipmentStore();
+  const currentMonster = computed(() => FloorScaling.getMonsterForFloor(currentFloor.value));
+  const recommendedFloor = computed(() => FloorScaling.getRecommendedFloor(playerStore.player));
+  const recommendedPower = computed(() => FloorScaling.getRecommendedPower(currentFloor.value));
+  const rewardMultiplier = computed(() => FloorScaling.getRewardMultiplier(playerStore.power, recommendedPower.value));
+  const canAdvanceFloor = computed(
+    () => playerStore.power >= FloorScaling.getRecommendedPower(currentFloor.value + 1) * 0.6,
+  );
 
-  getters: {
-    stageConfig: (state) => getStageConfig(state.currentStage),
-    progressionSummary(): ProgressionTargetSummary {
-      const player = usePlayerStore();
-      return getProgressionTargetSummary(
-        {
-          level: player.level,
-          mainAttribute: player.mainAttribute,
-          baseStats: player.totalStats,
-          equipped: player.equipped,
-          skillNodes: player.skillNodes,
-          trainingLevels: player.trainingLevels,
-        },
-        this.currentStage,
-        this.highestUnlockedStage,
-      );
-    },
-  },
+  function startAutoCombat(): void {
+    if (isAutoCombat.value) return;
+    isAutoCombat.value = true;
+    isPaused.value = false;
+    pauseReason.value = '';
+    addLog('system', '开始挂机战斗');
+    loopId.value = setInterval(() => {
+      executeBattle();
+    }, GAME_CONSTANTS.COMBAT_INTERVAL_MS);
+  }
 
-  actions: {
-    setCurrentStage(stage: number) {
-      const targetStage = Math.max(1, Math.min(Math.floor(stage), this.highestUnlockedStage));
-      this.currentStage = targetStage;
-    },
+  function stopAutoCombat(reason: PauseReason = 'manual'): void {
+    if (loopId.value) window.clearInterval(loopId.value);
+    loopId.value = null;
+    isAutoCombat.value = false;
+    isPaused.value = reason !== '';
+    pauseReason.value = reason;
+    if (reason === 'manual') addLog('system', '已停止挂机');
+    else if (reason === 'inventory_full') addLog('system', '背包已满，挂机暂停');
+    else if (reason) addLog('system', `挂机暂停：${reason}`);
+  }
 
-    switchToRecommendedFarmStage() {
-      this.setCurrentStage(this.progressionSummary.recommendedFarmStage);
-      this.addLog(`已切换到推荐挂机层：第 ${this.currentStage} 层。`);
-    },
-
-    switchToHighestUnlockedStage() {
-      this.setCurrentStage(this.highestUnlockedStage);
-      this.addLog(`已切换到最高解锁层：第 ${this.currentStage} 层。`);
-    },
-
-    addLog(message: string) {
-      this.logs.push({ id: Date.now() + this.logs.length, message });
-      if (this.logs.length > MAX_LOG_ENTRIES) {
-        this.logs = this.logs.slice(-MAX_LOG_ENTRIES);
-      }
-    },
-
-    setAutoFighting(active: boolean) {
-      const inventory = useInventoryStore();
-      if (active && inventory.isFull) {
-        this.isAutoFighting = false;
-        this.stoppedReason = '背包已满，自动挂机未启动。';
-        this.addLog(this.stoppedReason);
-        return;
-      }
-
-      this.isAutoFighting = active;
-      this.stoppedReason = active ? null : '手动停止自动挂机。';
-      this.addLog(active ? '自动挂机已启动。' : '自动挂机已停止。');
-    },
-
-    toggleAutoFighting() {
-      this.setAutoFighting(!this.isAutoFighting);
-    },
-
-    runSingleCombat(source: 'manual' | 'auto' = 'manual') {
-      const player = usePlayerStore();
-      const inventory = useInventoryStore();
-      const feedback = useFeedbackStore();
-      const settings = useSettingsStore();
-
-      if (inventory.isFull) {
-        this.isAutoFighting = false;
-        this.stoppedReason = '背包已满，收益已停止。';
-        this.addLog(this.stoppedReason);
-        return null;
-      }
-
-      const result = simulateStageCombat(
-        {
-          level: player.level,
-          mainAttribute: player.mainAttribute,
-          baseStats: player.totalStats,
-          equipped: player.equipped,
-          skillNodes: player.skillNodes,
-          trainingLevels: player.trainingLevels,
-        },
-        this.currentStage,
-      );
-
-      this.lastResult = result;
-      this.totalAutoRuns += source === 'auto' ? 1 : 0;
-
-      if (!result.win) {
-        const currentTarget = this.progressionSummary.current;
-        this.addLog(`挑战 ${this.stageConfig.name} 失败：${currentTarget.failureText}`);
-        if (this.stageConfig.tags.includes('boss')) {
-          feedback.pushFeedback(createBossFailedFeedback(this.currentStage, currentTarget.failureText));
-        }
-        if (source === 'auto') {
-          this.isAutoFighting = false;
-          this.stoppedReason = '战斗失败，自动挂机已暂停。';
-        }
-        return result;
-      }
-
-      const currentTarget = this.progressionSummary.current;
-      const reward = applyRewardDecay(
-        result.gold,
-        result.exp,
-        currentTarget.playerPower,
-        this.stageConfig.recommendedPower,
-        player.totalStats,
-      );
-
-      inventory.addGold(reward.gold);
-      player.gainExp(reward.exp);
-
-      const dropResults = result.drops.map((item) => inventory.processDroppedItem(item));
-      dropResults.forEach(({ item, reason }) => {
-        if (reason === 'kept') {
-          this.addLog(`击败怪物，获得 ${item.name}。`);
-          feedback.pushFeedback(createItemDropFeedback(item, player.equipped, settings.itemScoreMode));
-        } else if (reason === 'filtered') {
-          this.addLog(`${item.name} 未通过拾取过滤，已自动转化。`);
-          feedback.pushFeedback(createFilteredHighlightFeedback(item, player.equipped, settings.itemScoreMode));
-        } else {
-          this.addLog(`背包已满，${item.name} 未能拾取。`);
-          feedback.pushFeedback(createInventoryFullFeedback(inventory.lostDrops));
-        }
-      });
-
-      if (dropResults.some((drop) => drop.reason === 'full') || inventory.isFull) {
-        this.isAutoFighting = false;
-        this.stoppedReason = '背包已满，自动挂机已暂停。';
-        this.addLog(this.stoppedReason);
-      }
-
-      if (result.drops.length === 0) {
-        this.addLog(`击败怪物，获得 ${reward.gold} 金币和 ${reward.exp} 经验。`);
-      }
-
-      if (reward.multiplier < 1) {
-        this.addLog(`战力低于推荐值，本次收益为 ${Math.round(reward.multiplier * 100)}%。`);
-      }
-
-      if (this.currentStage === this.highestUnlockedStage) {
-        const clearedStage = this.currentStage;
-        this.highestUnlockedStage += 1;
-        this.addLog(`推层成功，已解锁第 ${this.highestUnlockedStage} 层。`);
-        feedback.pushFeedback(createStageUnlockFeedback(this.highestUnlockedStage));
-        if (this.stageConfig.tags.includes('boss')) {
-          feedback.pushFeedback(createBossClearFeedback(clearedStage));
-        }
-      }
-
+  function executeBattle(): CombatResult {
+    if (equipmentStore.isInventoryFull) {
+      stopAutoCombat('inventory_full');
+      const result = createEmptyCombatResult();
+      lastCombatResult.value = result;
       return result;
-    },
-  },
+    }
+
+    const monster = currentMonster.value;
+    const result = CombatEngine.simulateBattle(playerStore.player, monster);
+    const rewardRate = rewardMultiplier.value;
+
+    if (result.win) {
+      result.goldEarned = FloorScaling.getGoldReward(currentFloor.value, rewardRate, monster.type);
+      result.expEarned = FloorScaling.getExpReward(currentFloor.value, rewardRate, monster.type);
+      if (LootGenerator.shouldDrop(playerStore.player.magicFind) && !equipmentStore.isInventoryFull) {
+        result.drops.push(LootGenerator.generateDrop(currentFloor.value, playerStore.player.magicFind));
+      }
+      playerStore.gainGold(result.goldEarned * (1 + playerStore.player.goldFind));
+      playerStore.gainExp(result.expEarned * (1 + playerStore.player.expFind));
+      result.drops.forEach((item) => equipmentStore.addToInventory(item));
+      killCount.value += 1;
+      playerStore.setFloor(Math.max(playerStore.player.highestFloor, currentFloor.value));
+      addLog('win', `击杀 ${monster.name}，获得 ${result.goldEarned} 金币 / ${result.expEarned} 经验`);
+      result.drops.forEach((item) => addLog('loot', `获得装备：${item.name}`));
+    } else {
+      addLog('loss', `${monster.name} 击败了你，建议降低层数或更换装备`);
+      stopAutoCombat('death');
+    }
+
+    lastCombatResult.value = result;
+    return result;
+  }
+
+  function createEmptyCombatResult(): CombatResult {
+    return {
+      win: false,
+      rounds: 0,
+      playerDmgTotal: 0,
+      monsterDmgTotal: 0,
+      playerHpRemaining: playerStore.player.hp,
+      monsterHpRemaining: currentMonster.value.hp,
+      drops: [],
+      goldEarned: 0,
+      expEarned: 0,
+      killTime: 0,
+      survivalTime: 0,
+    };
+  }
+
+  function changeFloor(floor: number): boolean {
+    const nextFloor = Math.max(1, Math.floor(floor));
+    if (
+      nextFloor > playerStore.player.highestFloor + 1 &&
+      playerStore.power < FloorScaling.getRecommendedPower(nextFloor) * 0.6
+    ) {
+      return false;
+    }
+    currentFloor.value = nextFloor;
+    playerStore.setFloor(nextFloor);
+    addLog('system', `切换到第 ${nextFloor} 层`);
+    return true;
+  }
+
+  function resumeCombat(): void {
+    startAutoCombat();
+  }
+
+  function addLog(type: CombatLogEntry['type'], message: string): void {
+    combatLog.value.unshift({
+      id: generateId('log'),
+      type,
+      message,
+      timestamp: Date.now(),
+    });
+    combatLog.value = combatLog.value.slice(0, 60);
+  }
+
+  function applySaveState(state: {
+    currentFloor: number;
+    isAutoCombat: boolean;
+    killCount: number;
+    combatLog: CombatLogEntry[];
+  }): void {
+    currentFloor.value = state.currentFloor;
+    killCount.value = state.killCount;
+    combatLog.value = structuredClone(state.combatLog);
+    if (state.isAutoCombat) startAutoCombat();
+  }
+
+  function $reset(): void {
+    stopAutoCombat('');
+    currentFloor.value = 1;
+    combatLog.value = [];
+    killCount.value = 0;
+    isPaused.value = false;
+    pauseReason.value = '';
+    lastCombatResult.value = null;
+  }
+
+  return {
+    currentFloor,
+    isAutoCombat,
+    combatLog,
+    killCount,
+    isPaused,
+    pauseReason,
+    lastCombatResult,
+    currentMonster,
+    recommendedFloor,
+    recommendedPower,
+    rewardMultiplier,
+    canAdvanceFloor,
+    startAutoCombat,
+    stopAutoCombat,
+    executeBattle,
+    changeFloor,
+    resumeCombat,
+    addLog,
+    applySaveState,
+    $reset,
+  };
 });
